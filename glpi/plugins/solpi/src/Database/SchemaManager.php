@@ -19,21 +19,38 @@ final class SchemaManager
 
     public function execute(string $sql): void
     {
-        $commands = preg_split(
-            '/;\s*[\r\n]+/',
-            $sql
-        );
+        // Strip UTF-8 BOM
+        if (str_starts_with($sql, "\xEF\xBB\xBF")) {
+            $sql = substr($sql, 3);
+        }
 
-        foreach ($commands as $command) {
+        // Remove block comments /* ... */
+        $sql = preg_replace('/\/\*.*?\*\//s', '', $sql) ?? $sql;
 
-            $command = trim($command);
+        // Split on statement-ending semicolons
+        $statements = preg_split('/;\s*[\r\n]+/', $sql);
 
-            if ($command === '') {
+        foreach ($statements as $statement) {
+
+            // Remove line comments (--)  
+            $lines = array_filter(
+                explode("\n", $statement),
+                static fn(string $line): bool =>
+                    !str_starts_with(trim($line), '--')
+            );
+
+            $statement = trim(implode("\n", $lines));
+
+            if ($statement === '') {
                 continue;
             }
 
-            $this->db->query($command);
+            // Skip SET statements - GLPI manages connection settings
+            if (stripos($statement, 'SET ') === 0) {
+                continue;
+            }
 
+            $this->db->doQuery($statement);
         }
     }
 }

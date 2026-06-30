@@ -14,23 +14,30 @@ final class EvolutionService
     {
         $config = new Config();
         $config->load();
-        $evolution = $config->get('evolution', []);
 
-        $this->client = new EvolutionClient($evolution);
+        $this->client = new EvolutionClient(
+            $config->get('evolution', [])
+        );
     }
 
-    public function status(): array
+    public function isConnected(): bool
     {
-        return $this->client->status();
+        $instance = $this->client->fetchInstance();
+        return ($instance['connectionStatus'] ?? '') === 'open';
     }
 
-    public function session(): array
+    public function fetchInstance(): array
     {
-        return $this->client->session();
+        return $this->client->fetchInstance();
     }
 
-    public function qrCode(): array
+    public function connect(): array
     {
-        return $this->client->qrCode();
+        return $this->client->connect();
+    }
+
+    public function sendText(string $number, string $message): array
+    {
+        return $this->client->sendText($number, $message);
     }
 }

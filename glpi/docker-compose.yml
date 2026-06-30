@@ -1,5 +1,55 @@
 services:
 
+  glpi-db:
+    image: mariadb:10.11
+    container_name: glpi-db
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: glpi_root
+      MARIADB_DATABASE: glpi
+      MARIADB_USER: glpi
+      MARIADB_PASSWORD: glpi
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - glpi_db_data:/var/lib/mysql
+
+  glpi-init:
+    image: busybox:latest
+    container_name: glpi-init
+    restart: "no"
+    command: sh -c "chown -R 33:33 /var/glpi/files /var/glpi/marketplace /var/glpi/config"
+    volumes:
+      - glpi_files:/var/glpi/files
+      - glpi_marketplace:/var/glpi/marketplace
+      - glpi_config:/var/glpi/config
+
+  glpi:
+    image: glpi/glpi:latest
+    container_name: glpi
+    restart: always
+    depends_on:
+      glpi-db:
+        condition: service_started
+      glpi-init:
+        condition: service_completed_successfully
+    ports:
+      - "8081:80"
+    environment:
+      GLPI_DB_HOST: glpi-db
+      GLPI_DB_PORT: 3306
+      GLPI_DB_NAME: glpi
+      GLPI_DB_USER: glpi
+      GLPI_DB_PASSWORD: glpi
+    volumes:
+      - glpi_files:/var/glpi/files
+      - glpi_marketplace:/var/glpi/marketplace
+      - glpi_config:/var/glpi/config
+      - ./plugins/solpi:/var/www/glpi/plugins/solpi
+      - ./plugins/solpi/webhook.php:/var/www/glpi/public/solpi-webhook.php
+      - ./plugins/solpi/public:/var/www/glpi/public/solpi
+
   postgres:
     image: postgres:16
     container_name: evolution-postgres
@@ -23,7 +73,7 @@ services:
       - evolution_redis:/data
 
   evolution:
-    image: atendai/evolution-api:latest
+    image: evoapicloud/evolution-api:latest
     container_name: evolution-api
     restart: always
 
@@ -63,6 +113,10 @@ services:
       - evolution_instances:/evolution/instances
 
 volumes:
+  glpi_db_data:
+  glpi_files:
+  glpi_marketplace:
+  glpi_config:
   evolution_postgres:
   evolution_redis:
   evolution_instances:

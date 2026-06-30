@@ -33,6 +33,12 @@ function plugin_init_solpi(): void
 
     $PLUGIN_HOOKS['csrf_compliant']['solpi'] = true;
 
+    // Hook principal: disparado quando tecnico adiciona solucao ao ticket
+    $PLUGIN_HOOKS['item_add']['solpi'] = ['ITILSolution' => 'plugin_solpi_on_solution_added'];
+
+    // Fallback: mudanca manual de status para Resolvido
+    $PLUGIN_HOOKS['item_update']['solpi'] = ['Ticket' => 'plugin_solpi_on_ticket_update'];
+
     if (file_exists(__DIR__ . '/hook.php')) {
         require_once __DIR__ . '/hook.php';
     }

@@ -2,9 +2,12 @@
 |--------------------------------------------------------------------------
 | SOLPI Professional
 |--------------------------------------------------------------------------
-| Smart Operations Link for GLPI
+| Smart Operational Learning Platform for IT
 |--------------------------------------------------------------------------
-| Version: 2.0.0-alpha
+| Version: 2.0.0
+|--------------------------------------------------------------------------
+| Todas as tabelas usam o prefixo glpi_plugin_solpi_
+| CREATE TABLE IF NOT EXISTS garante idempotência na instalação
 |--------------------------------------------------------------------------
 */
 
@@ -12,322 +15,390 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ===========================================================
--- CONFIGURAÇÕES
+-- CONFIGURAÇÃO GLOBAL DO PLUGIN
 -- ===========================================================
 
-CREATE TABLE IF NOT EXISTS glpi_plugin_solpi_config (
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_config` (
 
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `id`               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
-    zabbix_url VARCHAR(255) NULL,
-    zabbix_token VARCHAR(255) NULL,
+    `zabbix_url`       VARCHAR(255) NULL,
+    `zabbix_token`     VARCHAR(255) NULL,
 
-    evolution_url VARCHAR(255) NULL,
-    evolution_token VARCHAR(255) NULL,
+    `evolution_url`    VARCHAR(255) NULL,
+    `evolution_token`  VARCHAR(255) NULL,
 
-    ai_provider VARCHAR(50) DEFAULT 'openai',
-    ai_model VARCHAR(100) DEFAULT 'gpt-5.5',
+    `ai_provider`      VARCHAR(50)  NOT NULL DEFAULT 'openai',
+    `ai_model`         VARCHAR(100) NOT NULL DEFAULT 'gpt-4o',
+    `ai_api_key`       TEXT NULL,
 
-    ai_api_key TEXT NULL,
+    `timezone`         VARCHAR(100) NOT NULL DEFAULT 'America/Sao_Paulo',
+    `language`         VARCHAR(10)  NOT NULL DEFAULT 'pt_BR',
 
-    timezone VARCHAR(100) DEFAULT 'America/Sao_Paulo',
+    `enabled`          TINYINT(1)   NOT NULL DEFAULT 1,
 
-    language VARCHAR(10) DEFAULT 'pt_BR',
+    `created_at`       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+                       ON UPDATE CURRENT_TIMESTAMP
 
-    enabled TINYINT(1) DEFAULT 1,
-
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    ON UPDATE CURRENT_TIMESTAMP
-
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ===========================================================
--- ALERTAS
+-- CONFIGURAÇÕES POR MÓDULO
 -- ===========================================================
 
-CREATE TABLE IF NOT EXISTS glpi_plugin_solpi_alerts (
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_settings` (
 
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `id`         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
-    eventid BIGINT NULL,
+    `module`     VARCHAR(100) NOT NULL,
+    `key`        VARCHAR(100) NOT NULL,
+    `value`      LONGTEXT     NULL,
+    `type`       VARCHAR(30)  NOT NULL DEFAULT 'string',
 
-    host VARCHAR(255) NOT NULL,
+    `created_at` TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+                 ON UPDATE CURRENT_TIMESTAMP,
 
-    trigger_name VARCHAR(255) NOT NULL,
+    UNIQUE KEY `uq_module_key` (`module`, `key`),
+    INDEX `idx_module` (`module`)
 
-    severity VARCHAR(30) NOT NULL,
-
-    status VARCHAR(30) DEFAULT 'OPEN',
-
-    ticket_id INT NULL,
-
-    raw_data LONGTEXT NULL,
-
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    INDEX(host),
-    INDEX(status),
-    INDEX(severity)
-
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ===========================================================
--- TICKETS
+-- ALERTAS DO ZABBIX
 -- ===========================================================
 
-CREATE TABLE IF NOT EXISTS glpi_plugin_solpi_tickets (
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_alerts` (
 
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `id`           BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
-    glpi_ticket_id INT NOT NULL,
+    `eventid`      BIGINT          NULL,
+    `host`         VARCHAR(255)    NOT NULL,
+    `trigger_name` VARCHAR(500)    NOT NULL,
+    `severity`     VARCHAR(30)     NOT NULL,
+    `status`       VARCHAR(30)     NOT NULL DEFAULT 'OPEN',
+    `ticket_id`    INT             NULL,
 
-    alert_id BIGINT NULL,
+    `raw_data`     LONGTEXT        NULL,
 
-    assigned_to INT NULL,
+    `created_at`   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
+                   ON UPDATE CURRENT_TIMESTAMP,
 
-    priority INT DEFAULT 3,
+    INDEX `idx_host`     (`host`),
+    INDEX `idx_status`   (`status`),
+    INDEX `idx_severity` (`severity`),
+    INDEX `idx_eventid`  (`eventid`)
 
-    status VARCHAR(30) DEFAULT 'OPEN',
-
-    opened_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    closed_at TIMESTAMP NULL,
-
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    ON UPDATE CURRENT_TIMESTAMP,
-
-    INDEX(glpi_ticket_id),
-    INDEX(status)
-
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ===========================================================
--- WHATSAPP
+-- SINCRONIA DE TICKETS (SOLPI <-> GLPI)
 -- ===========================================================
 
-CREATE TABLE IF NOT EXISTS glpi_plugin_solpi_whatsapp (
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_tickets` (
 
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `id`             BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
-    ticket_id BIGINT NULL,
+    `glpi_ticket_id` INT    NOT NULL,
+    `alert_id`       BIGINT NULL,
+    `assigned_to`    INT    NULL,
+    `priority`       INT    NOT NULL DEFAULT 3,
+    `status`         VARCHAR(30) NOT NULL DEFAULT 'OPEN',
+    `rating`         TINYINT UNSIGNED NULL,
 
-    phone VARCHAR(30),
+    `opened_at`  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `closed_at`  TIMESTAMP NULL,
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                 ON UPDATE CURRENT_TIMESTAMP,
 
-    direction VARCHAR(20),
+    INDEX `idx_glpi_ticket` (`glpi_ticket_id`),
+    INDEX `idx_alert`       (`alert_id`),
+    INDEX `idx_status`      (`status`)
 
-    message LONGTEXT,
-
-    status VARCHAR(30),
-
-    response LONGTEXT,
-
-    sent_at TIMESTAMP NULL,
-
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    INDEX(ticket_id),
-    INDEX(phone)
-
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ===========================================================
--- IA
+-- MENSAGENS WHATSAPP
 -- ===========================================================
 
-CREATE TABLE IF NOT EXISTS glpi_plugin_solpi_ai (
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_whatsapp` (
 
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `id`         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
-    ticket_id BIGINT NULL,
+    `ticket_id`  BIGINT       NULL,
+    `phone`      VARCHAR(30)  NOT NULL,
+    `direction`  VARCHAR(20)  NOT NULL,
+    `message`    LONGTEXT     NOT NULL,
+    `status`     VARCHAR(30)  NOT NULL DEFAULT 'PENDING',
+    `response`   LONGTEXT     NULL,
 
-    provider VARCHAR(50),
+    `sent_at`    TIMESTAMP    NULL,
+    `created_at` TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    model VARCHAR(100),
+    INDEX `idx_ticket` (`ticket_id`),
+    INDEX `idx_phone`  (`phone`),
+    INDEX `idx_status` (`status`)
 
-    prompt LONGTEXT,
-
-    response LONGTEXT,
-
-    tokens INT DEFAULT 0,
-
-    execution_time DECIMAL(10,3) DEFAULT 0,
-
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    INDEX(ticket_id)
-
-);
--- ===========================================================
--- LOGS
--- ===========================================================
-
-CREATE TABLE IF NOT EXISTS glpi_plugin_solpi_logs (
-
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
-    module VARCHAR(100) NOT NULL,
-
-    level VARCHAR(20) NOT NULL,
-
-    message LONGTEXT NOT NULL,
-
-    context LONGTEXT NULL,
-
-    ip_address VARCHAR(45) NULL,
-
-    user_id INT NULL,
-
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    INDEX(module),
-    INDEX(level),
-    INDEX(user_id),
-    INDEX(created_at)
-
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ===========================================================
--- DASHBOARD CACHE
+-- INTERAÇÕES DE IA
 -- ===========================================================
 
-CREATE TABLE IF NOT EXISTS glpi_plugin_solpi_dashboard (
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_ai` (
 
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `id`             BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
-    metric VARCHAR(100) NOT NULL,
+    `ticket_id`      BIGINT          NULL,
+    `provider`       VARCHAR(50)     NOT NULL,
+    `model`          VARCHAR(100)    NOT NULL,
+    `prompt`         LONGTEXT        NOT NULL,
+    `response`       LONGTEXT        NULL,
+    `tokens`         INT UNSIGNED    NOT NULL DEFAULT 0,
+    `execution_time` DECIMAL(10, 3)  NOT NULL DEFAULT 0.000,
 
-    metric_value VARCHAR(255) NOT NULL,
+    `created_at`     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    ON UPDATE CURRENT_TIMESTAMP,
+    INDEX `idx_ticket`   (`ticket_id`),
+    INDEX `idx_provider` (`provider`)
 
-    UNIQUE(metric)
-
-);
-
--- ===========================================================
--- KNOWLEDGE BASE
--- ===========================================================
-
-CREATE TABLE IF NOT EXISTS glpi_plugin_solpi_knowledge (
-
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
-    title VARCHAR(255) NOT NULL,
-
-    category VARCHAR(100) NULL,
-
-    keywords TEXT NULL,
-
-    content LONGTEXT NOT NULL,
-
-    embedding LONGTEXT NULL,
-
-    created_by INT NULL,
-
-    active TINYINT(1) DEFAULT 1,
-
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    ON UPDATE CURRENT_TIMESTAMP,
-
-    INDEX(category),
-    INDEX(active),
-    INDEX(created_by)
-
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ===========================================================
--- WEBHOOKS
+-- MEMÓRIA DE CONVERSAÇÃO (IA)
 -- ===========================================================
 
-CREATE TABLE IF NOT EXISTS glpi_plugin_solpi_webhooks (
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_conversations` (
 
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `id`         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
-    source VARCHAR(100) NOT NULL,
+    `session_id` VARCHAR(100) NOT NULL,
+    `ticket_id`  BIGINT       NULL,
+    `phone`      VARCHAR(30)  NULL,
+    `role`       VARCHAR(20)  NOT NULL,
+    `content`    LONGTEXT     NOT NULL,
 
-    endpoint VARCHAR(255) NOT NULL,
+    `created_at` TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    secret VARCHAR(255) NULL,
+    INDEX `idx_session`  (`session_id`),
+    INDEX `idx_ticket`   (`ticket_id`),
+    INDEX `idx_phone`    (`phone`)
 
-    status TINYINT(1) DEFAULT 1,
-
-    last_execution TIMESTAMP NULL,
-
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    INDEX(source),
-    INDEX(status)
-
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ===========================================================
--- JOB QUEUE
+-- EMBEDDINGS VETORIAIS (IA / RAG)
 -- ===========================================================
 
-CREATE TABLE IF NOT EXISTS glpi_plugin_solpi_jobs (
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_embeddings` (
 
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `id`          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
-    job_type VARCHAR(100) NOT NULL,
+    `source_type` VARCHAR(50)  NOT NULL,
+    `source_id`   BIGINT       NOT NULL,
+    `chunk_index` INT UNSIGNED NOT NULL DEFAULT 0,
+    `content`     LONGTEXT     NOT NULL,
+    `embedding`   LONGTEXT     NULL,
+    `model`       VARCHAR(100) NOT NULL DEFAULT 'text-embedding-ada-002',
 
-    payload LONGTEXT,
+    `created_at`  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    status VARCHAR(30) DEFAULT 'PENDING',
+    UNIQUE KEY `uq_source_chunk` (`source_type`, `source_id`, `chunk_index`),
+    INDEX `idx_source` (`source_type`, `source_id`)
 
-    attempts INT DEFAULT 0,
-
-    max_attempts INT DEFAULT 3,
-
-    next_run TIMESTAMP NULL,
-
-    started_at TIMESTAMP NULL,
-
-    finished_at TIMESTAMP NULL,
-
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    INDEX(status),
-    INDEX(job_type),
-    INDEX(next_run)
-
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ===========================================================
--- USUÁRIOS
+-- BASE DE CONHECIMENTO — ARTIGOS
 -- ===========================================================
 
-CREATE TABLE IF NOT EXISTS glpi_plugin_solpi_users (
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_knowledge` (
 
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `id`          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
-    glpi_user_id INT NOT NULL,
+    `title`       VARCHAR(500)  NOT NULL,
+    `content`     LONGTEXT      NOT NULL,
+    `summary`     TEXT          NULL,
+    `source_type` VARCHAR(50)   NULL,
+    `source_file` VARCHAR(500)  NULL,
+    `tags`        TEXT          NULL,
 
-    phone VARCHAR(30) NULL,
+    `status`      VARCHAR(30)   NOT NULL DEFAULT 'ACTIVE',
+    `views`       INT UNSIGNED  NOT NULL DEFAULT 0,
 
-    department VARCHAR(100) NULL,
+    `created_by`  INT           NULL,
+    `created_at`  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+                  ON UPDATE CURRENT_TIMESTAMP,
 
-    receive_whatsapp TINYINT(1) DEFAULT 1,
+    INDEX `idx_status`      (`status`),
+    INDEX `idx_source_type` (`source_type`),
+    FULLTEXT KEY `ft_title_content` (`title`, `content`)
 
-    receive_ai TINYINT(1) DEFAULT 1,
-
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    ON UPDATE CURRENT_TIMESTAMP,
-
-    UNIQUE(glpi_user_id)
-
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ===========================================================
--- CONFIGURAÇÕES GERAIS
+-- BASE DE CONHECIMENTO — ENTIDADES EXTRAÍDAS
 -- ===========================================================
+
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_knowledge_entities` (
+
+    `id`               BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    `knowledge_id`     BIGINT       NOT NULL,
+    `entity_type`      VARCHAR(50)  NOT NULL,
+    `entity_value`     VARCHAR(500) NOT NULL,
+    `normalized_value` VARCHAR(500) NULL,
+    `confidence`       DECIMAL(5,4) NOT NULL DEFAULT 1.0000,
+
+    `created_at`       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX `idx_knowledge`    (`knowledge_id`),
+    INDEX `idx_entity_type`  (`entity_type`),
+    INDEX `idx_entity_value` (`entity_value`(100))
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ===========================================================
+-- BASE DE CONHECIMENTO — GRAFO DE RELACIONAMENTOS
+-- ===========================================================
+
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_knowledge_relationships` (
+
+    `id`          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    `source_id`   BIGINT       NOT NULL,
+    `target_id`   BIGINT       NOT NULL,
+    `relation`    VARCHAR(100) NOT NULL,
+    `weight`      DECIMAL(5,4) NOT NULL DEFAULT 1.0000,
+
+    `created_at`  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY `uq_relationship` (`source_id`, `target_id`, `relation`),
+    INDEX `idx_source` (`source_id`),
+    INDEX `idx_target` (`target_id`)
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ===========================================================
+-- CACHE DO DASHBOARD
+-- ===========================================================
+
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_dashboard` (
+
+    `id`         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    `metric`     VARCHAR(100) NOT NULL,
+    `value`      LONGTEXT     NOT NULL,
+    `expires_at` TIMESTAMP    NOT NULL,
+
+    `created_at` TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+                 ON UPDATE CURRENT_TIMESTAMP,
+
+    UNIQUE KEY `uq_metric` (`metric`),
+    INDEX `idx_expires` (`expires_at`)
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ===========================================================
+-- JOBS DO SCHEDULER
+-- ===========================================================
+
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_jobs` (
+
+    `id`           BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    `name`         VARCHAR(200) NOT NULL,
+    `handler`      VARCHAR(500) NOT NULL,
+    `payload`      LONGTEXT     NULL,
+    `status`       VARCHAR(30)  NOT NULL DEFAULT 'PENDING',
+    `attempts`     TINYINT      NOT NULL DEFAULT 0,
+    `max_attempts` TINYINT      NOT NULL DEFAULT 3,
+    `error`        TEXT         NULL,
+
+    `scheduled_at` TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `started_at`   TIMESTAMP    NULL,
+    `finished_at`  TIMESTAMP    NULL,
+    `created_at`   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX `idx_status`        (`status`),
+    INDEX `idx_scheduled_at`  (`scheduled_at`)
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ===========================================================
+-- LOG DE WEBHOOKS RECEBIDOS
+-- ===========================================================
+
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_webhooks` (
+
+    `id`         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    `source`     VARCHAR(50)  NOT NULL,
+    `event`      VARCHAR(100) NOT NULL,
+    `payload`    LONGTEXT     NOT NULL,
+    `status`     VARCHAR(30)  NOT NULL DEFAULT 'RECEIVED',
+    `ip_address` VARCHAR(45)  NULL,
+    `error`      TEXT         NULL,
+
+    `created_at` TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX `idx_source` (`source`),
+    INDEX `idx_status` (`status`),
+    INDEX `idx_event`  (`event`)
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ===========================================================
+-- FILA DE NOTIFICAÇÕES
+-- ===========================================================
+
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_notifications` (
+
+    `id`        BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    `channel`   VARCHAR(30)  NOT NULL,
+    `recipient` VARCHAR(255) NOT NULL,
+    `subject`   VARCHAR(500) NULL,
+    `body`      LONGTEXT     NOT NULL,
+    `status`    VARCHAR(30)  NOT NULL DEFAULT 'PENDING',
+    `ticket_id` BIGINT       NULL,
+    `error`     TEXT         NULL,
+
+    `sent_at`   TIMESTAMP    NULL,
+    `created_at` TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX `idx_channel`  (`channel`),
+    INDEX `idx_status`   (`status`),
+    INDEX `idx_ticket`   (`ticket_id`)
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ===========================================================
+-- LOGS DE AUDITORIA
+-- ===========================================================
+
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_logs` (
+
+    `id`         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    `module`     VARCHAR(100) NOT NULL,
+    `level`      VARCHAR(20)  NOT NULL,
+    `message`    LONGTEXT     NOT NULL,
+    `context`    LONGTEXT     NULL,
+    `ip_address` VARCHAR(45)  NULL,
+    `user_id`    INT UNSIGNED NULL,
+
+    `created_at` TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX `idx_module`     (`module`),
+    INDEX `idx_level`      (`level`),
+    INDEX `idx_user`       (`user_id`),
+    INDEX `idx_created_at` (`created_at`)
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;
-
-COMMIT;

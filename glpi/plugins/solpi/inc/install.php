@@ -2,26 +2,22 @@
 
 declare(strict_types=1);
 
-use Migration;
-
 if (!defined('GLPI_ROOT')) {
     exit;
 }
 
 /**
- * Instala o plugin SOLPI.
+ * Instala as tabelas do plugin SOLPI.
+ *
+ * Executa o arquivo sql/install.sql via SchemaManager.
+ * O SQL usa CREATE TABLE IF NOT EXISTS, tornando a operação idempotente.
  */
 function plugin_solpi_install(): bool
 {
-    global $DB;
+    require_once __DIR__ . '/bootstrap.php';
 
-    $migration = new Migration(PLUGIN_SOLPI_VERSION);
-
-    /*
-     * As tabelas serão adicionadas aqui nas próximas Sprints.
-     */
-
-    $migration->executeMigration();
+    $installer = new SOLPI\Database\Installer();
+    $installer->install();
 
     return true;
 }

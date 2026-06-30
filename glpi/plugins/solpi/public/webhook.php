@@ -3,53 +3,52 @@
 declare(strict_types=1);
 
 /**
- * Webhook SOLPI — recebe eventos da Evolution API (WhatsApp).
+ * SOLPI Webhook — endpoint público para Evolution API (WhatsApp).
  *
- * URL configurada na Evolution API:
- *   http://glpi/plugins/solpi/ajax/webhook.php
+ * URL: http://glpi/solpi/webhook.php
+ * Montado em: /var/www/glpi/public/solpi/webhook.php
  *
- * Aceita POST com Content-Type: application/json.
- * Valida a chave da API no payload antes de processar.
+ * Aceita POST JSON da Evolution API v2.
+ * Valida apikey no payload e cria ticket no GLPI.
  */
 
-define('GLPI_ROOT', dirname(__DIR__, 3) . DIRECTORY_SEPARATOR);
+define('GLPI_ROOT', dirname(__DIR__, 4) . DIRECTORY_SEPARATOR);
 
 if (!file_exists(GLPI_ROOT . 'inc/includes.php')) {
     http_response_code(500);
-    echo json_encode(['error' => 'GLPI not found']);
+    echo json_encode(['error' => 'GLPI_ROOT not found: ' . GLPI_ROOT]);
     exit;
 }
 
 include GLPI_ROOT . 'inc/includes.php';
 
-// Apenas aceita POST
+header('Content-Type: application/json');
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['error' => 'Method Not Allowed']);
     exit;
 }
 
-// Lê o corpo da requisição
 $raw     = file_get_contents('php://input');
 $payload = json_decode($raw ?: '{}', true);
 
 if (!is_array($payload)) {
     http_response_code(400);
-    echo json_encode(['error' => 'Invalid JSON payload']);
+    echo json_encode(['error' => 'Invalid JSON']);
     exit;
 }
 
-// Valida a chave da Evolution API no payload
+// Validar chave da API
 $receivedKey = $payload['apikey'] ?? ($_SERVER['HTTP_APIKEY'] ?? '');
 
-require_once __DIR__ . '/../inc/bootstrap.php';
+require_once GLPI_ROOT . 'plugins/solpi/inc/bootstrap.php';
 
 use SOLPI\Core\Config;
 
-$config = new Config();
-$config->load();
-
-$expectedKey = $config->get('evolution.auth_key', 'solpi123');
+$cfg = new Config();
+$cfg->load();
+$expectedKey = $cfg->get('evolution.auth_key', 'solpi123');
 
 if ($receivedKey !== $expectedKey) {
     http_response_code(401);
@@ -57,23 +56,14 @@ if ($receivedKey !== $expectedKey) {
     exit;
 }
 
-// Processa o webhook
 use SOLPI\Modules\WhatsApp\WhatsAppController;
-
-header('Content-Type: application/json');
 
 try {
     $controller = new WhatsAppController();
     $result     = $controller->handleWebhook($payload);
-
     http_response_code(200);
     echo json_encode($result);
-
 } catch (Throwable $e) {
     http_response_code(500);
-    echo json_encode([
-        'error'   => $e->getMessage(),
-        'file'    => basename($e->getFile()),
-        'line'    => $e->getLine(),
-    ]);
+    echo json_encode(['error' => $e->getMessage(), 'file' => basename($e->getFile()), 'line' => $e->getLine()]);
 }

@@ -1,83 +1,183 @@
 <?php
 
-$config_file = __DIR__ . '/../config.json';
+declare(strict_types=1);
 
-$config = [];
+include __DIR__ . '/../inc/includes.php';
 
-if (file_exists($config_file)) {
-    $config = json_decode(file_get_contents($config_file), true);
+Session::checkLoginUser();
+
+require_once __DIR__ . '/../inc/bootstrap.php';
+
+use SOLPI\Integrations\Evolution\EvolutionClient;
+use SOLPI\Core\Config;
+
+// ------------------------------------------------------------------
+// Carregar configuração da Evolution API
+// ------------------------------------------------------------------
+$config = new Config();
+$config->load();
+$evolutionConfig = $config->get('evolution', []);
+$client = new EvolutionClient($evolutionConfig);
+
+$successMsg = '';
+$errorMsg   = '';
+
+// ------------------------------------------------------------------
+// POST: enviar mensagem de teste
+// ------------------------------------------------------------------
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_message'])) {
+
+    $number  = preg_replace('/\D/', '', $_POST['phone'] ?? '');
+    $message = trim($_POST['message'] ?? '');
+
+    if ($number === '' || $message === '') {
+        $errorMsg = 'Número e mensagem são obrigatórios.';
+    } else {
+        $result = $client->sendText($number, $message);
+        if ($result['success'] ?? false) {
+            $successMsg = "Mensagem enviada para +{$number}!";
+        } else {
+            $errorMsg = 'Falha ao enviar: ' . ($result['error'] ?? json_encode($result));
+        }
+    }
 }
 
-echo "<h1>Evolution API - SOLPI</h1>";
+// ------------------------------------------------------------------
+// Buscar status atual da instância
+// ------------------------------------------------------------------
+$instance = $client->fetchInstance();
+$isConnected = ($instance['connectionStatus'] ?? '') === 'open';
+$ownerJid    = $instance['ownerJid'] ?? null;
+$phone       = $ownerJid ? preg_replace('/@.*/', '', $ownerJid) : null;
+$profilePic  = $instance['profilePicUrl'] ?? null;
+$msgCount    = $instance['_count']['Message'] ?? 0;
+$contactCount = $instance['_count']['Contact'] ?? 0;
 
-echo "<hr>";
+Html::header('WhatsApp — SOLPI', '', 'central');
+?>
 
-echo "<h2>Status da Integração</h2>";
+<div class="container-fluid py-3">
 
-$api_url = $config['api_url'] ?? '';
-$api_token = $config['api_token'] ?? '';
+    <div class="d-flex align-items-center mb-4 gap-3">
+        <?php if ($profilePic): ?>
+            <img src="<?= htmlspecialchars($profilePic) ?>" width="56" height="56"
+                 class="rounded-circle border" alt="Foto WhatsApp">
+        <?php endif; ?>
+        <div>
+            <h3 class="mb-0">WhatsApp — Evolution API</h3>
+            <small class="text-muted">Instância: <strong>solpi</strong></small>
+        </div>
+    </div>
 
-if (!empty($api_url) && !empty($api_token)) {
+    <?php if ($successMsg): ?>
+        <div class="alert alert-success"><?= htmlspecialchars($successMsg) ?></div>
+    <?php endif; ?>
 
-    echo "<p style='color:green'><b>Configuração encontrada</b></p>";
+    <?php if ($errorMsg): ?>
+        <div class="alert alert-danger"><?= htmlspecialchars($errorMsg) ?></div>
+    <?php endif; ?>
 
-    echo "<p><b>URL:</b> " . htmlspecialchars($api_url) . "</p>";
+    <!-- STATUS -->
+    <div class="row mb-4">
 
-    echo "<p><b>Token:</b> " . htmlspecialchars($api_token) . "</p>";
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <div class="fs-1"><?= $isConnected ? '✅' : '❌' ?></div>
+                    <div class="fw-bold mt-1"><?= $isConnected ? 'Conectado' : 'Desconectado' ?></div>
+                    <?php if ($phone): ?>
+                        <small class="text-muted">+<?= htmlspecialchars($phone) ?></small>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
 
-} else {
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <div class="fs-1 fw-bold text-primary"><?= number_format($msgCount) ?></div>
+                    <div class="text-muted">Mensagens</div>
+                </div>
+            </div>
+        </div>
 
-    echo "<p style='color:red'><b>Evolution API não configurada</b></p>";
-}
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <div class="fs-1 fw-bold text-success"><?= number_format($contactCount) ?></div>
+                    <div class="text-muted">Contatos</div>
+                </div>
+            </div>
+        </div>
 
-echo "<hr>";
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <div class="fs-1 fw-bold text-info">
+                        <?= $instance['_count']['Chat'] ?? 0 ?>
+                    </div>
+                    <div class="text-muted">Chats</div>
+                </div>
+            </div>
+        </div>
 
-echo "<h2>Teste de Envio WhatsApp</h2>";
+    </div>
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    <?php if (!$isConnected): ?>
+    <!-- QR CODE (quando desconectado) -->
+    <div class="card mb-4">
+        <div class="card-header fw-bold">Conectar WhatsApp</div>
+        <div class="card-body text-center">
+            <?php
+            $qr = $client->connect();
+            if (!empty($qr['base64'])):
+            ?>
+                <p class="text-muted mb-3">Abra o WhatsApp → Dispositivos Conectados → Conectar Dispositivo</p>
+                <img src="<?= htmlspecialchars($qr['base64']) ?>" width="250" height="250" alt="QR Code">
+            <?php else: ?>
+                <p class="text-warning">Não foi possível gerar o QR code. Verifique a Evolution API.</p>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php endif; ?>
 
-    $telefone = $_POST['telefone'] ?? '';
-    $mensagem = $_POST['mensagem'] ?? '';
+    <!-- ENVIAR MENSAGEM DE TESTE -->
+    <?php if ($isConnected): ?>
+    <div class="card mb-4">
+        <div class="card-header fw-bold">Enviar Mensagem de Teste</div>
+        <div class="card-body">
+            <form method="post">
+                <div class="mb-3">
+                    <label class="form-label">Número (somente dígitos, com DDI)</label>
+                    <input type="text" name="phone" class="form-control" style="max-width:300px"
+                           placeholder="5519981584722" required>
+                    <small class="text-muted">Ex: 5511999999999 (DDI + DDD + número)</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Mensagem</label>
+                    <textarea name="message" class="form-control" rows="3" style="max-width:500px"
+                              required>Olá! Esta é uma mensagem de teste do SOLPI.</textarea>
+                </div>
+                <button type="submit" name="send_message" class="btn btn-success">
+                    📤 Enviar via WhatsApp
+                </button>
+            </form>
+        </div>
+    </div>
+    <?php endif; ?>
 
-    echo "<p style='color:green'><b>Simulação realizada com sucesso</b></p>";
+    <!-- INFO DA API -->
+    <div class="card">
+        <div class="card-header fw-bold">Configuração da Integração</div>
+        <div class="card-body">
+            <table class="table table-sm table-bordered" style="max-width:500px">
+                <tr><th>URL da API</th><td><?= htmlspecialchars($evolutionConfig['base_url'] ?? '-') ?></td></tr>
+                <tr><th>Instância</th><td><?= htmlspecialchars($evolutionConfig['instance'] ?? '-') ?></td></tr>
+                <tr><th>Status</th><td><?= $isConnected ? '<span class="badge bg-success">ONLINE</span>' : '<span class="badge bg-danger">OFFLINE</span>' ?></td></tr>
+            </table>
+        </div>
+    </div>
 
-    echo "<p><b>Telefone:</b> "
-        . htmlspecialchars($telefone)
-        . "</p>";
+</div>
 
-    echo "<p><b>Mensagem:</b><br>"
-        . nl2br(htmlspecialchars($mensagem))
-        . "</p>";
-
-    echo "<hr>";
-}
-
-echo "<form method='post'>";
-
-echo "<p>";
-echo "<label>Telefone:</label><br>";
-echo "<input type='text' name='telefone' value='5511999999999' size='30'>";
-echo "</p>";
-
-echo "<p>";
-echo "<label>Mensagem:</label><br>";
-echo "<textarea name='mensagem' rows='5' cols='60'>";
-echo "Olá! Seu chamado foi resolvido? Responda SIM para confirmar.";
-echo "</textarea>";
-echo "</p>";
-
-echo "<input type='submit' value='Simular Envio'>";
-
-echo "</form>";
-
-echo "<hr>";
-
-echo "<h2>Próximas Funcionalidades</h2>";
-
-echo "<ul>";
-echo "<li>Enviar mensagem real pela Evolution API</li>";
-echo "<li>Receber resposta do usuário</li>";
-echo "<li>Confirmar ticket automaticamente</li>";
-echo "<li>Solicitar avaliação</li>";
-echo "<li>Atualizar GLPI automaticamente</li>";
-echo "</ul>";
+<?php Html::footer(); ?>

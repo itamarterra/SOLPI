@@ -30,18 +30,18 @@ final class Bootstrap
     }
 
     /**
-     * Carrega as configurações.
+     * Carrega as configurações usando instância (Config::load() é método de instância).
      */
     private static function loadConfiguration(): void
     {
-        Config::load();
+        (new Config())->load();
     }
 
     /**
-     * Inicializa o Logger.
+     * Inicializa o Logger usando instância (Logger::initialize() é método de instância).
      */
     private static function initializeLogger(): void
     {
-        Logger::initialize();
+        (new Logger())->initialize();
     }
 }
