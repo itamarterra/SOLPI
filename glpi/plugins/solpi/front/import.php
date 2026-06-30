@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 include __DIR__ . '/../inc/includes.php';
 Session::checkLoginUser();
-require_once __DIR__ . '/../inc/bootstrap.php';
+
+// Carrega apenas o mapeamento PSR-4 do SOLPI (sem Bootstrap::initialize)
+require_once __DIR__ . '/../vendor/autoload.php';
 
 use SOLPI\Knowledge\Parsers\ExcelParser;
 use SOLPI\Knowledge\Services\ColumnDetector;

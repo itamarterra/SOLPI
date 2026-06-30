@@ -48,6 +48,8 @@ services:
       - glpi_config:/var/glpi/config
       - ./plugins/solpi:/var/www/glpi/plugins/solpi
       - ./plugins/solpi/webhook.php:/var/www/glpi/public/solpi-webhook.php
+      - ./plugins/solpi/test_public.php:/var/www/glpi/public/solpi-test.php
+      - ./plugins/solpi/import_public.php:/var/www/glpi/public/solpi-import.php
       - ./plugins/solpi/public:/var/www/glpi/public/solpi
 
   postgres:
