@@ -1,0 +1,13 @@
+<?php
+
+declare(strict_types=1);
+
+namespace SOLPI\Modules\Dashboard;
+
+final class DashboardPolicy
+{
+    public function canView(): bool
+    {
+        return true;
+    }
+}

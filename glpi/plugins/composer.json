@@ -1,0 +1,25 @@
+{
+    "name": "itamarterra/solpi",
+    "description": "SOLPI - Smart Operations Link for GLPI",
+    "type": "glpi-plugin",
+    "license": "MIT",
+    "version": "2.0.0",
+    "authors": [
+        {
+            "name": "Itamar Terra",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "SOLPI\\": "src/"
+        }
+    },
+    "require": {
+        "php": ">=8.2"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    }
+}

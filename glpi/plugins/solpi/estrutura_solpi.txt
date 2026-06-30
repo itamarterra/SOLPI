@@ -1,0 +1,284 @@
+Listagem de caminhos de pasta
+O número de série do volume é 00000268 400D:146C
+C:\ZABBIX\GLPI\PLUGINS\SOLPI
+|   composer.json
+|   estrutura_solpi.txt
+|   hook.php
+|   LICENSE
+|   migration.log
+|   README.md
+|   setup.php
+|   
++---ajax
+|       dashboard.php
+|       receive_alert.php
+|       upload.php
+|       webhook.php
+|       
++---api
+|       index.php
+|       middleware.php
+|       routes.php
+|       
++---assets
+|   +---css
+|   |       dashboard.css
+|   |       style.css
+|   |       tickets.css
+|   |       
+|   +---images
+|   +---img
+|   |   \---icons
+|   \---js
+|           app.js
+|           charts.js
+|           dashboard.js
+|           websocket.js
+|           
++---config
+|       config.php
+|       config.py
+|       constants.php
+|       permissions.php
+|       routes.php
+|       
++---docs
++---front
+|       ai.php
+|       alerts.php
+|       config.php
+|       dashboard.php
+|       dashboard_data.php
+|       evolution.php
+|       glpi_tickets.php
+|       index.php
+|       knowledge.php
+|       menu.php
+|       settings.php
+|       tickets.php
+|       whatsapp.php
+|       zabbix.php
+|       
++---inc
+|       bootstrap.php
+|       install.php
+|       menu.php
+|       permissions.php
+|       uninstall.php
+|       
++---install
++---locales
+|       en_GB.php
+|       pt_BR.php
+|       
++---logs
+|       .gitkeep
+|       zabbix.log
+|       
++---sql
+|       install.sql
+|       seed.sql
+|       uninstall.sql
+|       update_2_0.sql
+|       
++---src
+|   +---Api
+|   +---Config
+|   +---Contracts
+|   |       ConfigInterface.php
+|   |       HttpClientInterface.php
+|   |       LoggerInterface.php
+|   |       
+|   +---Core
+|   |       Bootstrap.php
+|   |       Cache.php
+|   |       Config.php
+|   |       Constants.php
+|   |       Container.php
+|   |       Controller.php
+|   |       Database.php
+|   |       Environment.php
+|   |       ExceptionHandler.php
+|   |       Kernel.php
+|   |       Logger.php
+|   |       Paths.php
+|   |       Plugin.php
+|   |       Repository.php
+|   |       Request.php
+|   |       Response.php
+|   |       Router.php
+|   |       Service.php
+|   |       Session.php
+|   |       Validator.php
+|   |       Version.php
+|   |       
+|   +---Dashboard
+|   +---Database
+|   |   |   Installer.php
+|   |   |   Migration.php
+|   |   |   Schema.php
+|   |   |   Seeder.php
+|   |   |   VersionManager.php
+|   |   |   
+|   |   \---Tables
+|   +---Events
+|   +---Exceptions
+|   |       ConfigurationException.php
+|   |       IntegrationException.php
+|   |       SOLPIException.php
+|   |       
+|   +---Helpers
+|   |       ArrayHelper.php
+|   |       DateHelper.php
+|   |       HttpHelper.php
+|   |       JsonHelper.php
+|   |       SecurityHelper.php
+|   |       StringHelper.php
+|   |       ValidationHelper.php
+|   |       
+|   +---Http
+|   +---Integrations
+|   |   +---AI
+|   |   |   +---Gemini
+|   |   |   +---Ollama
+|   |   |   \---OpenAI
+|   |   +---Evolution
+|   |   +---GLPI
+|   |   \---Zabbix
+|   |           AlertService.php
+|   |           EventService.php
+|   |           HostService.php
+|   |           TriggerService.php
+|   |           ZabbixClient.php
+|   |           ZabbixModel.php
+|   |           
+|   +---Jobs
+|   +---Middleware
+|   +---Modules
+|   |   +---AI
+|   |   |       AIController.php
+|   |   |       AIService.php
+|   |   |       Embeddings.php
+|   |   |       KnowledgeBase.php
+|   |   |       PromptManager.php
+|   |   |       
+|   |   +---Dashboard
+|   |   |       DashboardCache.php
+|   |   |       DashboardController.php
+|   |   |       DashboardDTO.php
+|   |   |       DashboardEvent.php
+|   |   |       DashboardModel.php
+|   |   |       DashboardPolicy.php
+|   |   |       DashboardQueries.php
+|   |   |       DashboardRepository.php
+|   |   |       DashboardService.php
+|   |   |       DashboardStatistics.php
+|   |   |       DashboardWidget.php
+|   |   |       
+|   |   +---Evolution
+|   |   +---GLPI
+|   |   +---Knowledge
+|   |   |       KnowledgeController.php
+|   |   |       KnowledgeRepository.php
+|   |   |       KnowledgeService.php
+|   |   |       
+|   |   +---Monitoring
+|   |   +---Notifications
+|   |   |       NotificationController.php
+|   |   |       NotificationRepository.php
+|   |   |       NotificationService.php
+|   |   |       
+|   |   +---Settings
+|   |   |       SettingsController.php
+|   |   |       SettingsRepository.php
+|   |   |       SettingsService.php
+|   |   |       
+|   |   +---Tickets
+|   |   |       TicketController.php
+|   |   |       TicketModel.php
+|   |   |       TicketRepository.php
+|   |   |       TicketService.php
+|   |   |       
+|   |   +---WhatsApp
+|   |   |       EvolutionAPI.php
+|   |   |       WhatsAppController.php
+|   |   |       WhatsAppRepository.php
+|   |   |       WhatsAppService.php
+|   |   |       
+|   |   \---Zabbix
+|   |           TriggerParser.php
+|   |           Webhook.php
+|   |           ZabbixController.php
+|   |           ZabbixRepository.php
+|   |           ZabbixService.php
+|   |           
+|   +---Routes
+|   +---Security
+|   \---Traits
+|           LoggerTrait.php
+|           ResponseTrait.php
+|           
++---storage
+|   +---cache
+|   +---logs
+|   \---tmp
++---templates
+|   |   ai.php
+|   |   alerts.php
+|   |   dashboard.php
+|   |   settings.php
+|   |   tickets.php
+|   |   whatsapp.php
+|   |   
+|   \---layouts
+|           footer.php
+|           header.php
+|           menu.php
+|           sidebar.php
+|           
++---tests
+|   +---Feature
+|   +---Integration
+|   \---Unit
+\---_legacy
+    |   AlertManager.php
+    |   GLPIConnector.php
+    |   KnowledgeBase.php
+    |   TicketManager.php
+    |   WhatsAppConnector.php
+    |   ZabbixConnector.php
+    |   
+    +---AI
+    +---Connectors
+    |       GLPIConnector.php
+    |       WhatsAppConnector.php
+    |       ZabbixConnector.php
+    |       
+    +---Controllers
+    |       DashboardController.php
+    |       SettingsController.php
+    |       WebhookController.php
+    |       
+    +---GLPI
+    +---Models
+    |       Alert.php
+    |       DashboardModel.php
+    |       SettingsModel.php
+    |       Ticket.php
+    |       User.php
+    |       
+    +---Repositories
+    |       DashboardRepository.php
+    |       SettingsRepository.php
+    |       
+    +---Services
+    |       AlertService.php
+    |       DashboardService.php
+    |       HttpClient.php
+    |       KnowledgeBaseService.php
+    |       NotificationService.php
+    |       SettingsService.php
+    |       TicketService.php
+    |       
+    +---WhatsApp
+    \---Zabbix

@@ -1,0 +1,26 @@
+# Composer
+/vendor/
+composer.lock
+
+# Logs
+/logs/*
+!/logs/.gitkeep
+
+# Ambiente
+.env
+.env.*
+
+# IDEs
+.vscode/
+.idea/
+
+# Sistema
+Thumbs.db
+.DS_Store
+
+# Node
+node_modules/
+
+# Testes
+coverage/
+.phpunit.result.cache

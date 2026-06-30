@@ -1,0 +1,33 @@
+﻿.solpi-dashboard{
+
+    padding:30px;
+
+}
+
+.solpi-dashboard h1{
+
+    margin-bottom:25px;
+
+}
+
+.solpi-card{
+
+    border-radius:10px;
+
+    transition:.2s;
+
+}
+
+.solpi-card:hover{
+
+    transform:translateY(-3px);
+
+}
+
+.solpi-value{
+
+    font-size:32px;
+
+    font-weight:bold;
+
+}
