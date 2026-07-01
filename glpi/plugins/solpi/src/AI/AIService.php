@@ -11,6 +11,9 @@ final class AIService
     ) {
     }
 
+    /**
+     * @param array<string,mixed> $memory
+     */
     public function remember(
         array $memory
     ): int {
@@ -21,6 +24,9 @@ final class AIService
 
     }
 
+    /**
+     * @param array<string,mixed> $entity
+     */
     public function registerEntity(
         array $entity
     ): int {
@@ -31,6 +37,9 @@ final class AIService
 
     }
 
+    /**
+     * @param array<string,mixed> $relationship
+     */
     public function registerRelationship(
         array $relationship
     ): int {
@@ -41,6 +50,9 @@ final class AIService
 
     }
 
+    /**
+     * @param array<string,mixed> $conversation
+     */
     public function saveConversation(
         array $conversation
     ): int {
@@ -51,6 +63,9 @@ final class AIService
 
     }
 
+    /**
+     * @param array<string,mixed> $message
+     */
     public function saveMessage(
         array $message
     ): int {

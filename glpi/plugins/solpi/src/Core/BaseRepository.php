@@ -62,6 +62,10 @@ abstract class BaseRepository
         );
     }
 
+    /**
+     * @param int $id
+     * @return array<string,mixed>|null
+     */
     public function find(
         int $id
     ): ?array {
@@ -92,6 +96,10 @@ abstract class BaseRepository
 
     }
 
+    /**
+     * @param array<string,mixed> $where
+     * @return array<string,mixed>|null
+     */
     public function findBy(
         array $where
     ): ?array {
@@ -118,6 +126,9 @@ abstract class BaseRepository
 
     }
 
+    /**
+     * @return array<int,array<string,mixed>>
+     */
     public function all(): array
     {
         return iterator_to_array(

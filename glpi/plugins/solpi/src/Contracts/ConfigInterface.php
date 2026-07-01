@@ -14,5 +14,8 @@ interface ConfigInterface
 
     public function remove(string $key): void;
 
+    /**
+     * @return array<string,mixed>
+     */
     public function all(): array;
 }

@@ -13,15 +13,13 @@ final class ResponseFormatter
         if(is_string($response))
             return $response;
 
-        return json_encode(
-
+        $json = json_encode(
             $response,
-
             JSON_PRETTY_PRINT |
-
             JSON_UNESCAPED_UNICODE
-
         );
+
+        return $json === false ? '' : $json;
 
     }
 }

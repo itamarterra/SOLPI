@@ -1,0 +1,37 @@
+*** Begin Patch
+*** Update File: webhook.php
+@@
+-// Log de debug: registra tipo de mensagem recebida (util para diagnostico)
+-$msgType = $payload['data']['messageType'] ?? '';
+-$msgKeys = array_keys($payload['data']['message'] ?? []);
+-file_put_contents('/var/glpi/logs/solpi_webhook.log',
+-    date('[Y-m-d H:i:s] ')
+-    . "event={$payload['event']} type={$msgType} msgKeys=[" . implode(',', $msgKeys) . "]"
+-    . " fromMe=" . json_encode($payload['data']['key']['fromMe'] ?? null)
+-    . "\n",
+-    FILE_APPEND
+-);
++// Debug log (avoid storing raw payloads or PII). Log event, message type and a payload hash only.
++$msgType = $payload['data']['messageType'] ?? '';
++$msgKeys = array_keys($payload['data']['message'] ?? []);
++$payloadHash = hash('sha256', $raw);
++file_put_contents('/var/glpi/logs/solpi_webhook.log',
++    date('[Y-m-d H:i:s] ')
++    . "event=" . ($payload['event'] ?? '')
++    . " type={$msgType} msgKeys=[" . implode(',', $msgKeys) . "]"
++    . " payload_hash={$payloadHash}"
++    . "\n",
++    FILE_APPEND
++);
+@@
+-        file_put_contents('/var/glpi/logs/webhook_debug.log',
+-        date('[Y-m-d H:i:s] ') . "AUTH FAIL - key='{$apiKey}' instance='{$instance}'\n" .
+-        "PAYLOAD: " . substr($raw, 0, 500) . "\n\n",
+-        FILE_APPEND
+-    );
++        // Record auth failure with payload hash only
++        file_put_contents('/var/glpi/logs/webhook_debug.log',
++            date('[Y-m-d H:i:s] ') . "AUTH FAIL - payload_hash=" . hash('sha256', $raw) . "\n",
++            FILE_APPEND
++        );
+*** End Patch

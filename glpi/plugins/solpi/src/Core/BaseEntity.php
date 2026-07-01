@@ -14,6 +14,11 @@ abstract class BaseEntity
 
     protected bool $active = true;
 
+    /**
+     * Entity metadata bag.
+     *
+     * @var array<string,mixed>
+     */
     protected array $metadata = [];
 
     protected DateTime $createdAt;
@@ -71,6 +76,9 @@ abstract class BaseEntity
         return $this;
     }
 
+    /**
+     * @return array<string,mixed>
+     */
     public function metadata(): array
     {
         return $this->metadata;
@@ -102,5 +110,8 @@ abstract class BaseEntity
         $this->updatedAt=new DateTime();
     }
 
+    /**
+     * @return array<string,mixed>
+     */
     abstract public function toArray(): array;
 }

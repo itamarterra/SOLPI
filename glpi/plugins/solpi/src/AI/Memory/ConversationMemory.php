@@ -6,7 +6,10 @@ namespace SOLPI\AI\Memory;
 
 final class ConversationMemory
 {
-    private array $messages=[];
+    /**
+     * @var array<int,array{role:string,content:string,time:string}>
+     */
+    private array $messages = [];
 
     public function add(
 
@@ -28,11 +31,12 @@ final class ConversationMemory
 
     }
 
-    public function history():array
+    /**
+     * @return array<int,array{role:string,content:string,time:string}>
+     */
+    public function history(): array
     {
-
         return $this->messages;
-
     }
 
     public function clear():void

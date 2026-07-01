@@ -6,6 +6,9 @@ namespace SOLPI\AI;
 
 final class PromptBuilder
 {
+    /**
+     * @param array<int,array{payload:array<string,mixed>}> $documents
+     */
     public function build(
         string $question,
         array $documents

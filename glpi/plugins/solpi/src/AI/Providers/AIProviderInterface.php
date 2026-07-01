@@ -8,14 +8,20 @@ interface AIProviderInterface
 {
     public function name(): string;
 
-    public function chat(
-        string $prompt,
-        array $context = []
-    ): string;
+    /**
+     * Send a chat prompt to the provider.
+     *
+     * @param string $prompt
+     * @param array<string,mixed> $context
+     * @return string
+     */
+    public function chat(string $prompt, array $context = []): string;
 
-    public function embedding(
-        string $text
-    ): array;
+    /**
+     * @param string $text
+     * @return array<int,float>
+     */
+    public function embedding(string $text): array;
 
     public function available(): bool;
 }

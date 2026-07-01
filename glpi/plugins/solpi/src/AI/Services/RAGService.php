@@ -12,7 +12,7 @@ final class RAGService
 
     private RetrieverService $retriever;
 
-    private PromptBuilder $promptBuilder;
+    private \SOLPI\AI\PromptBuilder $promptBuilder;
 
     private VectorMemory $memory;
 
@@ -22,16 +22,27 @@ final class RAGService
 
         $this->retriever = new RetrieverService();
 
-        $this->promptBuilder = new PromptBuilder();
+        $this->promptBuilder = new \SOLPI\AI\PromptBuilder();
 
         $this->memory = new VectorMemory();
     }
 
+    /**
+     * Accept either a list of entity names or an associative map.
+     *
+     * @param array<int,string>|array<string,mixed> $entities
+     * @return array<string,mixed>
+     */
     public function answer(
         string $question,
         string $intent,
         array $entities
     ): array {
+
+        // Normalize list form into associative map: ['NAME'=>true]
+        if ($entities !== [] && array_values($entities) === $entities) {
+            $entities = array_combine($entities, array_fill(0, count($entities), true)) ?: [];
+        }
 
         $vector = $this->embedding->generate(
             $question

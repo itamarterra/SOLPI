@@ -32,33 +32,42 @@ if (!is_array($payload)) {
     exit;
 }
 
-// Log de debug: registra tipo de mensagem recebida (util para diagnostico)
+// Debug log (avoid storing raw payloads or PII). Log event, message type and a payload hash only.
 $msgType = $payload['data']['messageType'] ?? '';
 $msgKeys = array_keys($payload['data']['message'] ?? []);
+$payloadHash = hash('sha256', $raw);
 file_put_contents('/var/glpi/logs/solpi_webhook.log',
     date('[Y-m-d H:i:s] ')
-    . "event={$payload['event']} type={$msgType} msgKeys=[" . implode(',', $msgKeys) . "]"
-    . " fromMe=" . json_encode($payload['data']['key']['fromMe'] ?? null)
+    . "event=" . ($payload['event'] ?? '')
+    . " type={$msgType} msgKeys=[" . implode(',', $msgKeys) . "]"
+    . " payload_hash={$payloadHash}"
     . "\n",
     FILE_APPEND
 );
 
-// Validacao: aceita se tiver apikey correta OU se vier da instancia 'solpi'
-$apiKey   = $payload['apikey'] ?? ($_SERVER['HTTP_APIKEY'] ?? '');
-$instance = $payload['instance'] ?? '';
+// Authentication: require HMAC signature header `X-SOLPI-SIGNATURE`
+// Shared secret must be provided via environment variable `SOLPI_WEBHOOK_SECRET`.
+$signatureHeader = $_SERVER['HTTP_X_SOLPI_SIGNATURE'] ?? ($_SERVER['X-SOLPI-SIGNATURE'] ?? '');
+$secret = getenv('SOLPI_WEBHOOK_SECRET') ?: '';
 
-$validKey      = ($apiKey === 'solpi123');
-$validInstance = ($instance === 'solpi');
+if (empty($secret) || empty($signatureHeader)) {
+    // Missing secret or signature — deny to avoid fallback to weak auth.
+    http_response_code(401);
+    echo json_encode(['error' => 'Unauthorized']);
+    exit;
+}
 
-if (!$validKey && !$validInstance) {
-    // Log para debug
+// Validate HMAC-SHA256 signature of raw payload
+$expected = hash_hmac('sha256', $raw, $secret);
+// Use hash_equals to mitigate timing attacks
+if (!hash_equals($expected, $signatureHeader)) {
+    // Record auth failure with payload hash only
     file_put_contents('/var/glpi/logs/webhook_debug.log',
-        date('[Y-m-d H:i:s] ') . "AUTH FAIL - key='{$apiKey}' instance='{$instance}'\n" .
-        "PAYLOAD: " . substr($raw, 0, 500) . "\n\n",
+        date('[Y-m-d H:i:s] ') . "AUTH FAIL - payload_hash=" . hash('sha256', $raw) . "\n",
         FILE_APPEND
     );
     http_response_code(401);
-    echo json_encode(['error' => 'Unauthorized', 'received_key' => $apiKey, 'instance' => $instance]);
+    echo json_encode(['error' => 'Unauthorized']);
     exit;
 }
 

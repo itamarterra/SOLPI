@@ -6,6 +6,9 @@ namespace SOLPI\AI\Services;
 
 final class EntityResolver
 {
+    /**
+     * @return array<int,string>
+     */
     public function resolve(
         string $question
     ): array {

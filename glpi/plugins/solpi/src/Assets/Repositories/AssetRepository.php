@@ -97,6 +97,10 @@ final class AssetRepository
         );
     }
 
+    /**
+     * @param int $id
+     * @return array<string,mixed>|null
+     */
     public function find(int $id): ?array
     {
         $iterator = $this->db->request([
@@ -113,6 +117,10 @@ final class AssetRepository
         return null;
     }
 
+    /**
+     * @param string $uuid
+     * @return array<string,mixed>|null
+     */
     public function findByUUID(string $uuid): ?array
     {
         $iterator = $this->db->request([
@@ -129,6 +137,9 @@ final class AssetRepository
         return null;
     }
 
+    /**
+     * @return array<int,array<string,mixed>>
+     */
     public function all(): array
     {
         return iterator_to_array(

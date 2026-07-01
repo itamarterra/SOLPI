@@ -1,0 +1,58 @@
+severity,file,line,issue,identifier,recommendation
+Critical,webhook.php,1,Hardcoded API key 'solpi123' and fallback instance auth,INSECURE_AUTH,Replace with signature-based auth (HMAC/JWT) and remove fallback; rotate keys
+Critical,webhook.php,1,Raw payloads logged to disk including potential PII,LOGGING_SENSITIVE,Stop logging raw payloads; mask PII and log hashes/timestamps
+Critical,sql/install.sql,1,Secrets stored in plaintext columns (`ai_api_key`, `zabbix_token`, `evolution_token`),CWE-200,Move secrets to vault/env; encrypt at rest and restrict DB access
+Critical,src/Core/Database.php,45,Call to undefined DBmysql::query() (stub mismatch),method.notFound,Align DB stub `src/stubs/dbmysql.php` with actual usage or encapsulate DB access in repository
+Critical,src/AI/AIKernel.php,51,Argument type mismatch passed to RAGService::answer() (array<int,string> vs array<string,mixed>),argument.type,Normalize entities to associative map or accept union types in RAGService
+High,src/AI/Providers/AIProviderInterface.php,11,Parameter $context has no iterable value-type (phpstan missingType.iterableValue),missingType.iterableValue,Add phpdoc `@param array<string,mixed> $context` to interface
+High,src/AI/Services/SimilarityService.php,15,Parameters $a/$b lack value-type annotations,missingType.iterableValue,Add phpdoc `@param array<int,float> $a` and `$b` and ensure types
+High,src/Assets/Entities/Asset.php,39,Property $metadata has no value-type documented,missingType.iterableValue,Add phpdoc `@var array<string,mixed>` for $metadata and return types
+High,src/Assets/Repositories/AssetRepository.php,100,find()/findByUUID()/all() missing iterable value-type,missingType.iterableValue,Annotate returns `array<string,mixed>` or `array<int,array<string,mixed>>`
+High,src/Assets/Repositories/AssetRepository.php,102,DBmysql::request() called with array shape not matching stub,argument.type,Standardize request argument format and update stub signature
+High,src/Assets/Services/AssetService.php,69,Public methods missing iterable value return types,missingType.iterableValue,Add phpdoc return value types for public APIs
+High,src/Companies/Entities/Company.php,31,Property $settings lacks value-type,missingType.iterableValue,Add `@var array<string,mixed>` and method phpdoc for settings()
+High,src/Core/BaseEntity.php,17,Property $metadata lacks value-type,missingType.iterableValue,Add phpdoc for metadata property and toArray return
+High,src/Core/BaseRepository.php,29,insert()/update() parameter $data missing iterable value-type,missingType.iterableValue,Annotate `@param array<string,mixed> $data`
+High,src/Core/BaseRepository.php,65,find()/all() return types missing iterable value-type,missingType.iterableValue,Annotate return types precisely
+High,src/Core/Collection.php,11,Implements IteratorAggregate without generics (TKey,TValue),missingType.generics,Add generics phpdoc for Collection and ArrayIterator types
+High,src/Core/Database.php,38,Database::request() param $query lacks value-type and returns untyped array,missingType.iterableValue,Annotate and refactor request to typed result arrays or DTOs
+High,src/Core/Database.php,45,DBmysql::escape() undefined in stub,method.notFound,Update DB stub to include escape()/query() or wrap calls with safe helpers
+High,src/Contracts/HttpClientInterface.php,9,Methods missing iterable value-type for headers/query/return,missingType.iterableValue,Add `array<string,string>|array<string,mixed>` phpdoc for params and return
+High,src/Contracts/LoggerInterface.php,9,Logger methods $context lack iterable value-type,missingType.iterableValue,Annotate `@param array<string,mixed> $context` for all logger methods
+High,src/Core/Http/HttpRequest.php,13,Properties headers/query/body/files lack value-type,missingType.iterableValue,Add phpdoc and typed accessors for headers/query/body/files
+Medium,src/Modules/Dashboard/DashboardModel.php,1,Duplicate model exists in `_legacy/Models/DashboardModel.php` (different shape),DUPLICATE_MODEL,Consolidate to single model and provide adapter for legacy callers
+Medium,_legacy/Models/DashboardModel.php,1,Legacy model used by `src/Services/DashboardService.php` causing namespace mismatch,DUPLICATE_MODEL,Document and plan migration; avoid runtime ambiguity
+Medium,src/Services/DashboardService.php,1,Service uses legacy model `SOLPI\Models\DashboardModel` while modules use `SOLPI\Modules\Dashboard`,NAMESPACE_MISMATCH,Standardize namespace and update callers via adapter
+Medium,src/Knowledge/*,*,Ingestion pipeline lacks provenance/trust scoring leading to RAG poisoning risk,RAG_POISONING,Add source metadata, provenance scoring, and whitelist trusted sources prior to vectorization
+Medium,sql/install.sql,1,Embeddings stored in LONGTEXT (scalability & query performance),SCHEMA_SCALE,Consider vector DB (pgvector/Milvus) or separate optimized storage for embeddings
+Medium,sql/install.sql,1,No foreign keys for tickets.alert_id → alerts.id (integrity risk),MISSING_FK,Add FK constraints where appropriate with migration plan
+Medium,webhook.php,*,Accepts API key via payload or header and allows instance fallback (weak auth),INSECURE_AUTH,Require header-based auth with signature and reject payload-based keys
+Medium,webhook.php,*,Logs payloads and auth failures to world-writable paths (privacy risk),LOGGING_PRIVACY,Ensure log files have restricted permissions and avoid logging full payloads
+Medium,src/Core/Config.php,33,Foreach may receive list<string>|false causing non-iterable error,foreach.nonIterable,Add defensive checks and typing when reading config
+Medium,src/Core/Environment.php,16,Null-coalesce used where expression is not nullable,nullCoalesce.expr,Review code logic to avoid redundant `??` and clarify types
+Medium,src/Core/EventDispatcher.php,56,list of listeners return lacks value-type,missingType.iterableValue,Annotate listeners return type as `array<int, callable>`
+Medium,src/Core/Http/HttpResponse.php,9,Constructor headers param lacks value-type,missingType.iterableValue,Annotate constructor and accessors with array value types
+Medium,src/Core/Http/Middleware/AuthenticationMiddleware.php,8,__call has $arguments with no value-type,missingType.iterableValue,Annotate `@param array<int,mixed> $arguments` on magic methods
+Medium,src/Knowledge/Extractors/ManufacturerExtractor.php,*,Potential duplication across extractors (similar logic),DUPLICATE_CODE,Consolidate common extraction utilities into shared helper
+Medium,src/Helpers/SecurityHelper.php,*,Missing centralized input sanitization for external inputs,INPUT_SANITIZE,Implement common sanitizer and use for webhooks/api inputs
+Medium,front/*,*,Templates output risk of XSS if unescaped variables used,XSS,Review templates and escape output using `htmlspecialchars` or templating engine
+Medium,public/*,*,Public endpoints lack unified rate-limiting and abuse protection,THROUGHPUT_RISK,Introduce rate-limiter middleware and IP-based throttling
+Low,src/Integrations/Zabbix/ZabbixClient.php,*,Hardcoded endpoints or default timeouts may be suboptimal,CONFIG_HARDENING,Move endpoints/timeouts to config and expose via DI
+Low,src/Modules/WhatsApp/EvolutionAPI.php,*,No input schema validation for external API responses,UNTRUSTED_INPUT,Add response schema validation and defensive parsing
+Low,src/Knowledge/Parsers/PdfParser.php,*,Parsing untrusted documents may lead to XXE or similar,XXE,Ensure external XML parsing is disabled and use secure parser settings
+Low,src/Traits/LoggerTrait.php,*,Trait may encourage global logger access increasing coupling,DESIGN_COUPLING,Prefer DI for logger instances to improve testability
+Low,templates/*.php,*,Some templates include PHP logic and file includes leading to potential path traversal or LFI risk,LFI_REVIEW,Review template includes and use safe path resolution; avoid including user-controlled paths
+Low,src/Helpers/JsonHelper.php,*,json decode errors are not consistently handled,ERROR_HANDLING,Add null/false checks and throw controlled exceptions on malformed JSON
+Low,src/Core/Container.php,145,registered() lacks iterable value-type annotation,missingType.iterableValue,Annotate return types for container registries
+Low,src/Core/Cache.php,9,$cache property lacks value-type,missingType.iterableValue,Annotate cache store type and methods
+Low,src/Knowledge/Builders/EntityBuilder.php,*,Complex builder has long method chains (readability),LONG_METHOD,Refactor into smaller helpers and add unit tests
+Low,src/Core/Logging/FileLogger.php,*,Log rotation/size not enforced (disk fill risk),LOG_ROTATION,Implement log rotation or integrate with system logger
+Low,_legacy/*,*,Legacy connectors duplicated across `_legacy/Connectors`,DUPLICATE_LEGACY,Document and archive legacy connectors; prefer `src/Integrations/*`
+Low,composer.json,*,`autoload.files` includes stubs which may mask missing vendor deps,AUTOLOAD_RISK,Prefer proper dev autoload or move stubs under `autoload-dev` and document purpose
+Low,phpstan-report-utf8.txt,1,Many missingType.iterableValue warnings reduce signal-to-noise,STATIC_NOISE,Prioritize fixing public API phpdoc and stubs then re-run phpstan
+Low,README.md,*,Missing security/hardening and deployment instructions,DOCS,Add security and deployment checklist to README
+Low,tests/*,*,Insufficient test coverage for critical flows (webhook, IA pipeline),TEST_COVERAGE,Add unit/integration tests for webhook auth and RAG pipeline
+Low,tools/Auditor/*,*,Auditor tooling present but not integrated into CI,TOOL_INTEGRATION,Add auditor run to CI to catch duplications and strict types
+Low,src/Core/Uuid.php,*,If relying on ramsey stub, ensure compatibility with real lib or vendor,DEPENDENCY_RISK,Document stub usage and add tests that validate UUID generation
+Low,src/Knowledge/Memory/MemoryRepository.php,*,Persistence layer for memory lacks retention policy,DATABASE_GOVERNANCE,Define retention and purge policies for conversation memory
+Low,src/Modules/Dashboard/DashboardRepository.php,*,Repository methods not typed in phpdoc may cause phpstan warnings,missingType.iterableValue,Annotate repository return types and parameters

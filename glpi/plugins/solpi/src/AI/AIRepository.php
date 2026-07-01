@@ -13,6 +13,9 @@ final class AIRepository
     ) {
     }
 
+    /**
+     * @param array<string,mixed> $data
+     */
     public function saveConversation(
         array $data
     ): int {
@@ -27,6 +30,9 @@ final class AIRepository
         return (int)$db->insertId();
     }
 
+    /**
+     * @param array<string,mixed> $data
+     */
     public function saveMessage(
         array $data
     ): int {
@@ -41,6 +47,9 @@ final class AIRepository
         return (int)$db->insertId();
     }
 
+    /**
+     * @param array<string,mixed> $data
+     */
     public function saveMemory(
         array $data
     ): int {
@@ -55,6 +64,9 @@ final class AIRepository
         return (int)$db->insertId();
     }
 
+    /**
+     * @param array<string,mixed> $data
+     */
     public function saveEntity(
         array $data
     ): int {
@@ -69,6 +81,9 @@ final class AIRepository
         return (int)$db->insertId();
     }
 
+    /**
+     * @param array<string,mixed> $data
+     */
     public function saveRelationship(
         array $data
     ): int {

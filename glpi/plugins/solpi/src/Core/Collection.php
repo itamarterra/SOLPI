@@ -10,7 +10,12 @@ use ArrayIterator;
 
 final class Collection implements Countable, IteratorAggregate
 {
-    private array $items=[];
+    /**
+     * Internal items storage.
+     *
+     * @var array<int,mixed>
+     */
+    private array $items = [];
 
     public function add(
         mixed $item
@@ -20,6 +25,11 @@ final class Collection implements Countable, IteratorAggregate
 
     }
 
+    /**
+     * Return all items as an indexed array.
+     *
+     * @return array<int,mixed>
+     */
     public function all(): array
     {
         return $this->items;
@@ -30,6 +40,9 @@ final class Collection implements Countable, IteratorAggregate
         return count($this->items);
     }
 
+    /**
+     * @return ArrayIterator<int,mixed>
+     */
     public function getIterator(): ArrayIterator
     {
         return new ArrayIterator(

@@ -6,13 +6,16 @@ namespace SOLPI\AI\Services;
 
 final class EmbeddingService
 {
+    /**
+     * @return array<string,int>
+     */
     public function generate(
         string $text
     ): array {
 
         $text = mb_strtolower($text);
 
-        $words = preg_split('/\s+/', $text);
+        $words = preg_split('/\s+/', $text) ?: [];
 
         $vector = [];
 

@@ -36,6 +36,11 @@ final class Asset
 
     private bool $active = true;
 
+    /**
+     * Metadata bag for the asset.
+     *
+     * @var array<string,mixed>
+     */
     private array $metadata = [];
 
     private DateTime $createdAt;
@@ -209,9 +214,15 @@ final class Asset
         return $this;
     }
 
+    /**
+     * @return array<string,mixed>
+     */
     public function metadata(): array
     {
-        return $this->metadata;
+        /** @var array<string,mixed> $m */
+        $m = $this->metadata;
+
+        return $m;
     }
 
     public function setMetadata(string $key, mixed $value): self
@@ -235,8 +246,16 @@ final class Asset
         $this->updatedAt = new DateTime();
     }
 
+    /**
+     * Convert entity to array representation.
+     *
+     * @return array<string,mixed>
+     */
     public function toArray(): array
     {
+        /** @var array<string,mixed> $md */
+        $md = $this->metadata;
+
         return [
             'id' => $this->id,
             'uuid' => $this->uuid,
@@ -252,7 +271,7 @@ final class Asset
             'purchase_date' => $this->purchaseDate,
             'warranty_date' => $this->warrantyDate,
             'active' => $this->active,
-            'metadata' => $this->metadata,
+            'metadata' => $md,
             'created_at' => $this->createdAt->format('Y-m-d H:i:s'),
             'updated_at' => $this->updatedAt->format('Y-m-d H:i:s')
         ];

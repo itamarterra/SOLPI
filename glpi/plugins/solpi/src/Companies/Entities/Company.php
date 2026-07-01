@@ -28,6 +28,9 @@ final class Company extends BaseEntity
 
     private ?string $zipCode = null;
 
+    /**
+     * @var array<string,mixed>
+     */
     private array $settings = [];
 
     public function __construct(
@@ -161,9 +164,15 @@ final class Company extends BaseEntity
         return $this;
     }
 
-    public function settings():array
+    /**
+     * @return array<string,mixed>
+     */
+    public function settings(): array
     {
-        return $this->settings;
+        /** @var array<string,mixed> $s */
+        $s = $this->settings;
+
+        return $s;
     }
 
     public function setSetting(string $key,mixed $value):static
@@ -173,8 +182,14 @@ final class Company extends BaseEntity
         return $this;
     }
 
-    public function toArray():array
+    /**
+     * @return array<string,mixed>
+     */
+    public function toArray(): array
     {
+        /** @var array<string,mixed> $md */
+        $md = $this->metadata;
+
         return [
 
             'id'=>$this->id,
@@ -205,7 +220,7 @@ final class Company extends BaseEntity
 
             'settings'=>$this->settings,
 
-            'metadata'=>$this->metadata,
+            'metadata'=>$md,
 
             'created_at'=>$this->createdAt->format('Y-m-d H:i:s'),
 

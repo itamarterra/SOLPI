@@ -15,47 +15,7 @@ final class CompanyRepository extends BaseRepository
         Company $company
     ): int {
 
-        return $this->insert([
-
-            'uuid' => $company->uuid(),
-
-            'name' => $company->name(),
-
-            'trade_name' => $company->tradeName(),
-
-            'document' => $company->document(),
-
-            'email' => $company->email(),
-
-            'phone' => $company->phone(),
-
-            'website' => $company->website(),
-
-            'address' => $company->address(),
-
-            'city' => $company->city(),
-
-            'state' => $company->state(),
-
-            'zip_code' => $company->zipCode(),
-
-            'active' => $company->active() ? 1 : 0,
-
-            'settings' => json_encode(
-                $company->settings(),
-                JSON_UNESCAPED_UNICODE
-            ),
-
-            'metadata' => json_encode(
-                $company->metadata(),
-                JSON_UNESCAPED_UNICODE
-            ),
-
-            'created_at' => $company->createdAt()->format('Y-m-d H:i:s'),
-
-            'updated_at' => $company->updatedAt()->format('Y-m-d H:i:s')
-
-        ]);
+        return $this->insert($this->mapCompanyData($company, true));
 
     }
 
@@ -63,48 +23,12 @@ final class CompanyRepository extends BaseRepository
         Company $company
     ): bool {
 
+        $data = $this->mapCompanyData($company, false);
+        $data['updated_at'] = date('Y-m-d H:i:s');
+
         return $this->update(
-
             $company->id(),
-
-            [
-
-                'name'=>$company->name(),
-
-                'trade_name'=>$company->tradeName(),
-
-                'document'=>$company->document(),
-
-                'email'=>$company->email(),
-
-                'phone'=>$company->phone(),
-
-                'website'=>$company->website(),
-
-                'address'=>$company->address(),
-
-                'city'=>$company->city(),
-
-                'state'=>$company->state(),
-
-                'zip_code'=>$company->zipCode(),
-
-                'active'=>$company->active()?1:0,
-
-                'settings'=>json_encode(
-                    $company->settings(),
-                    JSON_UNESCAPED_UNICODE
-                ),
-
-                'metadata'=>json_encode(
-                    $company->metadata(),
-                    JSON_UNESCAPED_UNICODE
-                ),
-
-                'updated_at'=>date('Y-m-d H:i:s')
-
-            ]
-
+            $data
         );
 
     }
@@ -119,5 +43,37 @@ final class CompanyRepository extends BaseRepository
 
         ]);
 
+    }
+
+    /**
+     * @param Company $company
+     * @param bool $withTimestamps
+     * @return array<string,mixed>
+     */
+    private function mapCompanyData(Company $company, bool $withTimestamps = false): array
+    {
+        $data = [
+            'uuid' => $company->uuid(),
+            'name' => $company->name(),
+            'trade_name' => $company->tradeName(),
+            'document' => $company->document(),
+            'email' => $company->email(),
+            'phone' => $company->phone(),
+            'website' => $company->website(),
+            'address' => $company->address(),
+            'city' => $company->city(),
+            'state' => $company->state(),
+            'zip_code' => $company->zipCode(),
+            'active' => $company->active() ? 1 : 0,
+            'settings' => json_encode($company->settings(), JSON_UNESCAPED_UNICODE),
+            'metadata' => json_encode($company->metadata(), JSON_UNESCAPED_UNICODE),
+        ];
+
+        if ($withTimestamps) {
+            $data['created_at'] = $company->createdAt()->format('Y-m-d H:i:s');
+            $data['updated_at'] = $company->updatedAt()->format('Y-m-d H:i:s');
+        }
+
+        return $data;
     }
 }

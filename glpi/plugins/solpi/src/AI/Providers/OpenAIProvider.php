@@ -11,6 +11,9 @@ final class OpenAIProvider extends AbstractAIProvider
         return 'OpenAI';
     }
 
+    /**
+     * @param array<string,mixed> $context
+     */
     public function chat(
         string $prompt,
         array $context=[]

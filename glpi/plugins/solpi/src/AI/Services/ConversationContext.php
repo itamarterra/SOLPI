@@ -43,6 +43,9 @@ final class ConversationContext
 
     }
 
+    /**
+     * @return array<int,array{role:string,content:string,time:string}>
+     */
     public function history(): array
     {
         return $this->memory->history();

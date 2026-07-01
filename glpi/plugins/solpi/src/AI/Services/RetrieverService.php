@@ -8,6 +8,12 @@ use SOLPI\AI\Memory\VectorMemory;
 
 final class RetrieverService
 {
+    /**
+     * @param array<int,float>|array<string,int> $queryEmbedding
+     * @param VectorMemory $memory
+     * @param int $limit
+     * @return array<int,array{id:string,score:float,payload:array<string,mixed>}>
+     */
     public function search(
         array $queryEmbedding,
         VectorMemory $memory,

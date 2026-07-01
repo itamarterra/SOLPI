@@ -11,6 +11,9 @@ final class OllamaProvider extends AbstractAIProvider
         return 'Ollama';
     }
 
+    /**
+     * @param array<string,mixed> $context
+     */
     public function chat(
         string $prompt,
         array $context=[]

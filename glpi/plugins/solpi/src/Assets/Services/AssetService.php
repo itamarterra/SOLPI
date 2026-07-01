@@ -66,25 +66,45 @@ final class AssetService
 
     }
 
+    /**
+     * @param int $id
+     * @return array<string,mixed>|null
+     */
     public function find(
         int $id
     ): ?array {
 
-        return $this->repository->find($id);
+        /** @var array<string,mixed>|null $result */
+        $result = $this->repository->find($id);
+
+        return $result;
 
     }
 
+    /**
+     * @param string $uuid
+     * @return array<string,mixed>|null
+     */
     public function findByUUID(
         string $uuid
     ): ?array {
 
-        return $this->repository->findByUUID($uuid);
+        /** @var array<string,mixed>|null $result */
+        $result = $this->repository->findByUUID($uuid);
+
+        return $result;
 
     }
 
+    /**
+     * @return array<int,array<string,mixed>>
+     */
     public function all(): array
     {
-        return $this->repository->all();
+        /** @var array<int,array<string,mixed>> $list */
+        $list = $this->repository->all();
+
+        return $list;
     }
 
     public function count(): int
