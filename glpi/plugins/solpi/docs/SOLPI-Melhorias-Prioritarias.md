@@ -12,7 +12,7 @@
 - [x] Cobrir caminho de paginacao e incremental do SQL adapter.
 - [x] Cobrir caminho de paginacao e offset do CSV adapter.
 - [x] Cobrir parsing e records_path do XML adapter.
-- [ ] Cobrir caminhos de erro do worker e da fila.
+- [x] Cobrir caminhos de erro do worker e da fila.
 
 ## 3. Observabilidade operacional
 - [x] Expor resumo de jobs, batches, duplicados, truncados e falhas por janela.

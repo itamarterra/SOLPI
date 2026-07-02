@@ -186,6 +186,16 @@ Resultado esperado:
 
 - `CsvXmlAdapterSmoke OK`
 
+## 14) Worker failure and replay local
+
+Execute o self-check local:
+
+- `php src/Modules/IntegrationEngine/Tests/WorkerFailureSmoke.php`
+
+Resultado esperado:
+
+- `WorkerFailureSmoke OK`
+
 Consulta checkpoint salvo:
 - GET /integration-engine/checkpoints?source=erp_sql&adapter=sql&name=companies_sync
 

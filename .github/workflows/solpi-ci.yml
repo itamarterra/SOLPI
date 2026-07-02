@@ -44,3 +44,7 @@ jobs:
       - name: CSV and XML adapter smoke
         working-directory: glpi/plugins/solpi
         run: php src/Modules/IntegrationEngine/Tests/CsvXmlAdapterSmoke.php
+
+      - name: Worker failure smoke
+        working-directory: glpi/plugins/solpi
+        run: php src/Modules/IntegrationEngine/Tests/WorkerFailureSmoke.php
