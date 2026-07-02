@@ -314,6 +314,17 @@ Saida esperada:
 - Tabela com `latest_throughput`, `prev_throughput`, `delta_abs`, `delta_pct` por volume.
 - Indicador agregado `mean_delta_throughput_abs`.
 
+## 21) Fluxo diario em comando unico
+
+Executa baseline historico e relatorio de tendencia em sequencia:
+
+- `php src/Modules/IntegrationEngine/Tests/IntegrationEngineBenchmarkDailyRunner.php --base-url="http://localhost:8081/solpi/index.php" --api-key="SEU_SEGREDO" --sizes="250,500,1000,2000" --batch-size=250 --worker-limit=300 --last=7`
+
+Saida esperada:
+- Bloco de benchmark comparativo.
+- Gravacao no historico JSONL.
+- Relatorio latest vs previous ao final.
+
 Todos aceitam envelope:
 {
 	"apikey": "SEU_SEGREDO",
