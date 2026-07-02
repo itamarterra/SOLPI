@@ -50,6 +50,7 @@ final class IntegrationEngineWorker
 
             try {
                 $payload = is_array($job['payload'] ?? null) ? $job['payload'] : [];
+                $queueMeta = is_array($payload['_queue_meta'] ?? null) ? $payload['_queue_meta'] : [];
                 $incoming = is_array($payload['payload'] ?? null) ? $payload['payload'] : [];
 
                 if (isset($incoming['record']) && is_array($incoming['record'])) {
@@ -115,6 +116,10 @@ final class IntegrationEngineWorker
                 $this->audit->info('Integration job processed.', [
                     'job_id' => $jobId,
                     'name' => $job['name'] ?? '',
+                    'batch_index' => $queueMeta['batch_index'] ?? null,
+                    'batch_count' => $queueMeta['batch_count'] ?? null,
+                    'batch_size' => $queueMeta['batch_size'] ?? null,
+                    'batch_jobs_in_chunk' => $queueMeta['batch_jobs_in_chunk'] ?? null,
                     'canonical_id' => $resolution['canonical_id'] ?? null,
                     'entity_type' => $resolution['entity_type'] ?? null,
                     'confidence' => $resolution['confidence'] ?? null,
@@ -139,6 +144,8 @@ final class IntegrationEngineWorker
 
                 $this->audit->error('Integration job failed.', [
                     'job_id' => $jobId,
+                    'batch_index' => $queueMeta['batch_index'] ?? null,
+                    'batch_count' => $queueMeta['batch_count'] ?? null,
                     'error' => $e->getMessage(),
                 ]);
             }

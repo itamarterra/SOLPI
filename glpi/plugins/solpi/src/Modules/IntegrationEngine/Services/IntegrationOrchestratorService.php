@@ -185,8 +185,42 @@ final class IntegrationOrchestratorService
         $jobIds = [];
         $batchCount = 0;
 
-        foreach (array_chunk($batchJobs, $batchSize) as $jobChunk) {
-            $chunkIds = $this->queue->pushBatch($jobChunk);
+        foreach (array_chunk($batchJobs, $batchSize) as $batchIndex => $jobChunk) {
+            $annotatedChunk = [];
+
+            foreach ($jobChunk as $jobIndex => $job) {
+                $job['payload']['_queue_meta'] = [
+                    'adapter' => $adapter,
+                    'source' => $source,
+                    'event' => $event,
+                    'batch_size' => $batchSize,
+                    'batch_index' => $batchIndex,
+                    'batch_count' => 0,
+                    'job_index' => $jobIndex,
+                    'records_total' => count($records),
+                    'records_queued' => count($batchJobs),
+                    'records_duplicate' => $duplicates,
+                    'truncated' => $truncated,
+                ];
+
+                if ($checkpointEnabled) {
+                    $job['payload']['_queue_meta']['checkpoint_enabled'] = true;
+                    $job['payload']['_queue_meta']['checkpoint_name'] = $checkpointName;
+                    $job['payload']['_queue_meta']['checkpoint_in'] = $checkpointIn;
+                    $job['payload']['_queue_meta']['checkpoint_out'] = $checkpointOut;
+                }
+
+                $annotatedChunk[] = $job;
+            }
+
+            $annotatedChunkCount = count($annotatedChunk);
+            foreach ($annotatedChunk as &$job) {
+                $job['payload']['_queue_meta']['batch_count'] = $batchCount + 1;
+                $job['payload']['_queue_meta']['batch_jobs_in_chunk'] = $annotatedChunkCount;
+            }
+            unset($job);
+
+            $chunkIds = $this->queue->pushBatch($annotatedChunk);
             $jobIds = array_merge($jobIds, $chunkIds);
             $batchCount++;
         }
