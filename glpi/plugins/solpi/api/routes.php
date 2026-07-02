@@ -112,6 +112,11 @@ function solpi_api_routes(): array
 
 				return $controller->jobs($limit);
 			},
+			'/integration-engine/summary' => static function (array $payload = [], array $query = []): array {
+				$controller = new IntegrationController();
+
+				return $controller->summary();
+			},
 			'/integration-engine/adapters' => static function (array $payload = [], array $query = []): array {
 				$controller = new IntegrationController();
 

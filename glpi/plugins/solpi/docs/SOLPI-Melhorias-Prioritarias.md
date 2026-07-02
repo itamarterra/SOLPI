@@ -11,7 +11,7 @@
 - [ ] Cobrir caminhos de erro do worker e da fila.
 
 ## 3. Observabilidade operacional
-- [ ] Expor resumo de jobs, batches, duplicados, truncados e falhas por janela.
+- [x] Expor resumo de jobs, batches, duplicados, truncados e falhas por janela.
 - [ ] Padronizar metadados de execucao em respostas da API.
 - [ ] Melhorar diagnostico para suporte e operacao.
 

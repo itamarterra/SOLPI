@@ -5,17 +5,20 @@ declare(strict_types=1);
 namespace SOLPI\Modules\IntegrationEngine\Controllers;
 
 use SOLPI\Modules\IntegrationEngine\Services\IntegrationOrchestratorService;
+use SOLPI\Modules\IntegrationEngine\Services\IntegrationSummaryService;
 use SOLPI\Modules\IntegrationEngine\Services\QueueService;
 
 final class IntegrationController
 {
     private IntegrationOrchestratorService $orchestrator;
     private QueueService $queue;
+    private IntegrationSummaryService $summary;
 
     public function __construct()
     {
         $this->orchestrator = new IntegrationOrchestratorService();
         $this->queue = new QueueService();
+        $this->summary = new IntegrationSummaryService();
     }
 
     /**
@@ -53,5 +56,13 @@ final class IntegrationController
         return [
             'items' => $this->queue->recent($limit),
         ];
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function summary(): array
+    {
+        return $this->summary->summary();
     }
 }

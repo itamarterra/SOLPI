@@ -34,6 +34,7 @@ Fase 5 implementada:
 - Endpoint genérico de ingestão por adapter: POST /integration-engine/ingest/adapter.
 - Endpoints dedicados por fonte: /integration-engine/ingest/{rest|soap|csv|json|xml|sql|ldap|ftp|sftp|email|webhook}.
 - Endpoint de catálogo de adapters: GET /integration-engine/adapters.
+- Endpoint de resumo operacional: GET /integration-engine/summary.
 - REST adapter com paginação configurável (page/offset/cursor) e records_path para payloads aninhados.
 - SQL adapter com modo incremental e paginação por LIMIT/OFFSET para cargas volumosas.
 - FTP/SFTP adapters com modo list e modo download (conteúdo em text/base64).
