@@ -275,6 +275,16 @@ Campos uteis para analise:
 Observacao:
 - O summary consolida `records_total`, `records_queued`, `records_duplicate`, `checkpoint_jobs` e `truncated_jobs` por `ingestion_run_id` para evitar supercontagem por job.
 
+## 18) Benchmark comparativo (250, 500, 1000, 2000)
+
+Execute o benchmark runner:
+
+- `php src/Modules/IntegrationEngine/Tests/IntegrationEngineBenchmarkRunner.php --base-url="http://localhost:8081/solpi/index.php" --api-key="SEU_SEGREDO" --sizes="250,500,1000,2000" --batch-size=250 --worker-limit=300`
+
+Saida esperada:
+- Tabela comparativa com `enqueue_s`, `worker_s`, `total_s` e `throughput_rec_s` por volume.
+- Bloco JSON com as mesmas linhas para automacao.
+
 Todos aceitam envelope:
 {
 	"apikey": "SEU_SEGREDO",
