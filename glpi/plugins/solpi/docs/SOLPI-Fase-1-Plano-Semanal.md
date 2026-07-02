@@ -21,6 +21,7 @@ Garantir que cada ingestao carregue contexto suficiente para auditoria, troubles
 - [IntegrationOrchestratorService.php](../src/Modules/IntegrationEngine/Services/IntegrationOrchestratorService.php)
 - [IntegrationEngineWorker.php](../src/Modules/IntegrationEngine/Workers/IntegrationEngineWorker.php)
 - [JobRepository.php](../src/Modules/IntegrationEngine/Repositories/JobRepository.php)
+- [SOLPI Fase 1 Semana 1 Checklist](SOLPI-Fase-1-Semana-1-Checklist.md)
 
 ### Resultado esperado
 - Cada job pode ser rastreado da API ate o worker.
