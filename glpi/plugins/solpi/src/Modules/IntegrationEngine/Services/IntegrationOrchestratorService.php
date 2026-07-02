@@ -143,7 +143,8 @@ final class IntegrationOrchestratorService
             }
         }
 
-        $jobIds = [];
+        $batchJobs = [];
+        $recordsForBatch = [];
         $duplicates = 0;
 
         foreach ($records as $index => $record) {
@@ -157,17 +158,29 @@ final class IntegrationOrchestratorService
             $enriched['_adapter'] = $adapter;
             $enriched['_adapter_meta'] = is_array($result['meta'] ?? null) ? $result['meta'] : [];
             $enriched['_record_index'] = $index;
+            $recordsForBatch[] = $enriched;
+        }
 
-            $ingest = $this->ingest($source, $event, $enriched);
-            if (($ingest['status'] ?? '') === 'duplicate') {
+        foreach ($recordsForBatch as $record) {
+            $envelope = new IngestionEnvelope($source, $event, $record);
+            $data = $envelope->toArray();
+
+            if ($this->idempotency->isDuplicate($envelope->source, $envelope->idempotencyKey)) {
+                $this->idempotency->markDuplicate($envelope->source, $envelope->idempotencyKey, $data);
                 $duplicates++;
                 continue;
             }
 
-            if (isset($ingest['job_id'])) {
-                $jobIds[] = (int)$ingest['job_id'];
-            }
+            $this->idempotency->markReceived($envelope->source, $envelope->idempotencyKey, $data);
+            $batchJobs[] = [
+                'name' => 'integration:' . $envelope->source . ':' . $envelope->event,
+                'handler' => 'IntegrationEngineWorker@process',
+                'payload' => $data,
+                'max_attempts' => 5,
+            ];
         }
+
+        $jobIds = $batchJobs !== [] ? $this->queue->pushBatch($batchJobs) : [];
 
         return [
             'status' => 'queued',

@@ -24,6 +24,15 @@ final class QueueService
     }
 
     /**
+     * @param array<int,array{name:string,handler:string,payload:array<string,mixed>,max_attempts?:int}> $jobs
+     * @return array<int,int>
+     */
+    public function pushBatch(array $jobs): array
+    {
+        return $this->jobs->enqueueBatch($jobs);
+    }
+
+    /**
      * @return array<int,array<string,mixed>>
      */
     public function recent(int $limit = 30): array

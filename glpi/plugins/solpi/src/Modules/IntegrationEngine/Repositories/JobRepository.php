@@ -40,6 +40,45 @@ final class JobRepository implements QueueProducerInterface, QueueConsumerInterf
     }
 
     /**
+     * @param array<int,array{name:string,handler:string,payload:array<string,mixed>,max_attempts?:int}> $jobs
+     * @return array<int,int>
+     */
+    public function enqueueBatch(array $jobs): array
+    {
+        if ($jobs === []) {
+            return [];
+        }
+
+        $this->db->query('START TRANSACTION');
+        $ids = [];
+
+        try {
+            foreach ($jobs as $job) {
+                $this->db->insert('glpi_plugin_solpi_jobs', [
+                    'name' => (string)$job['name'],
+                    'handler' => (string)$job['handler'],
+                    'payload' => json_encode($job['payload'], JSON_UNESCAPED_UNICODE),
+                    'status' => 'PENDING',
+                    'attempts' => 0,
+                    'max_attempts' => max(1, (int)($job['max_attempts'] ?? 5)),
+                    'scheduled_at' => date('Y-m-d H:i:s'),
+                ]);
+
+                $ids[] = (int)$this->db->insertId();
+            }
+
+            $this->db->query('COMMIT');
+        } catch (
+            \Throwable $e
+        ) {
+            $this->db->query('ROLLBACK');
+            throw $e;
+        }
+
+        return $ids;
+    }
+
+    /**
      * @return array<int,array<string,mixed>>
      */
     public function pending(int $limit = 50): array
