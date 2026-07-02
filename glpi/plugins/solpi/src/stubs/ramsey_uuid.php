@@ -8,6 +8,10 @@ namespace Ramsey\Uuid;
  * Minimal stub for Ramsey\Uuid\Uuid used by the project for static analysis.
  * This is ONLY for static analysis and local tooling; do not rely on it at runtime.
  */
+if (class_exists(Uuid::class, false)) {
+    return;
+}
+
 class Uuid
 {
     /**

@@ -77,6 +77,16 @@ if (!class_exists('DBmysql')) {
         }
 
         /**
+         * Execute a raw query (GLPI compatibility alias).
+         * @param string $sql
+         * @return bool
+         */
+        public function doQuery(string $sql): bool
+        {
+            return true;
+        }
+
+        /**
          * Escape a string for use in SQL.
          * @param string $value
          * @return string

@@ -14,6 +14,10 @@ final class SchemaManager
     {
         global $DB;
 
+        if (!$DB instanceof DBmysql) {
+            throw new \RuntimeException('Conexao com o banco do GLPI nao encontrada.');
+        }
+
         $this->db = $DB;
     }
 
