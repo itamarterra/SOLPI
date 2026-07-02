@@ -25,12 +25,22 @@ final class CsvAdapter implements SourceAdapterInterface
         }
 
         $delimiter = (string)($payload['delimiter'] ?? ',');
+        $offset = max(0, (int)($payload['offset'] ?? 0));
+        $limit = (int)($payload['limit'] ?? 0);
         $lines = preg_split('/\r\n|\n|\r/', trim($content)) ?: [];
         if ($lines === []) {
             return ['records' => [], 'meta' => ['count' => 0]];
         }
 
         $headers = str_getcsv((string)array_shift($lines), $delimiter);
+        if ($offset > 0) {
+            $lines = array_slice($lines, $offset);
+        }
+
+        if ($limit > 0) {
+            $lines = array_slice($lines, 0, $limit);
+        }
+
         $records = [];
 
         foreach ($lines as $line) {
@@ -50,6 +60,8 @@ final class CsvAdapter implements SourceAdapterInterface
             'meta' => [
                 'count' => count($records),
                 'adapter' => 'csv',
+                'offset' => $offset,
+                'limit' => $limit > 0 ? $limit : null,
             ],
         ];
     }
