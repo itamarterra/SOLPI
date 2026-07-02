@@ -28,7 +28,9 @@
         ,
         "files": [
             "src/stubs/dbmysql.php",
-            "src/stubs/ramsey_uuid.php"
+            "src/stubs/ramsey_uuid.php",
+            "src/stubs/glpi_runtime.php",
+            "src/stubs/phpspreadsheet.php"
         ]
     },
     "require": {

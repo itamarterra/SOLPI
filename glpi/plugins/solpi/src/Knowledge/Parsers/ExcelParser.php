@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace SOLPI\Knowledge\Parsers;
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use RuntimeException;
 
 /**
