@@ -146,6 +146,16 @@ Campos esperados na resposta:
 - checkpoint_out
 - checkpoint_saved
 
+## 10) Batch context local
+
+Execute o self-check local:
+
+- `php src/Modules/IntegrationEngine/Tests/BatchContextSmoke.php`
+
+Resultado esperado:
+
+- `BatchContextSmoke OK`
+
 Consulta checkpoint salvo:
 - GET /integration-engine/checkpoints?source=erp_sql&adapter=sql&name=companies_sync
 

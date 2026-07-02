@@ -17,6 +17,7 @@ final class IntegrationOrchestratorService
     private PayloadValidator $validator;
     private AdapterFactory $adapterFactory;
     private SourceCheckpointService $checkpoints;
+    private BatchContextService $batchContext;
 
     public function __construct()
     {
@@ -26,6 +27,7 @@ final class IntegrationOrchestratorService
         $this->validator = new PayloadValidator();
         $this->adapterFactory = new AdapterFactory();
         $this->checkpoints = new SourceCheckpointService();
+        $this->batchContext = new BatchContextService();
     }
 
     /**
@@ -184,31 +186,34 @@ final class IntegrationOrchestratorService
         $batchSize = max(1, min(1000, $requestedBatchSize));
         $jobIds = [];
         $batchCount = 0;
+        $batchChunks = array_chunk($batchJobs, $batchSize);
+        $batchTotal = count($batchChunks);
 
-        foreach (array_chunk($batchJobs, $batchSize) as $batchIndex => $jobChunk) {
+        foreach ($batchChunks as $batchIndex => $jobChunk) {
             $annotatedChunk = [];
 
             foreach ($jobChunk as $jobIndex => $job) {
-                $job['payload']['_queue_meta'] = [
-                    'adapter' => $adapter,
-                    'source' => $source,
-                    'event' => $event,
-                    'batch_size' => $batchSize,
-                    'batch_index' => $batchIndex,
-                    'batch_count' => 0,
-                    'job_index' => $jobIndex,
-                    'records_total' => count($records),
-                    'records_queued' => count($batchJobs),
-                    'records_duplicate' => $duplicates,
-                    'truncated' => $truncated,
-                ];
-
-                if ($checkpointEnabled) {
-                    $job['payload']['_queue_meta']['checkpoint_enabled'] = true;
-                    $job['payload']['_queue_meta']['checkpoint_name'] = $checkpointName;
-                    $job['payload']['_queue_meta']['checkpoint_in'] = $checkpointIn;
-                    $job['payload']['_queue_meta']['checkpoint_out'] = $checkpointOut;
-                }
+                $job['payload']['_queue_meta'] = $this->batchContext->build(
+                    $adapter,
+                    $source,
+                    $event,
+                    $batchSize,
+                    $batchIndex,
+                    $batchCount + 1,
+                    $batchTotal,
+                    $jobIndex,
+                    count($jobChunk),
+                    count($records),
+                    count($batchJobs),
+                    $duplicates,
+                    $truncated,
+                    $checkpointEnabled ? [
+                        'enabled' => true,
+                        'name' => $checkpointName,
+                        'in' => $checkpointIn,
+                        'out' => $checkpointOut,
+                    ] : []
+                );
 
                 $annotatedChunk[] = $job;
             }
@@ -236,6 +241,7 @@ final class IntegrationOrchestratorService
             'job_ids' => $jobIds,
             'batch_size' => $batchSize,
             'batch_count' => $batchCount,
+            'batch_total' => $batchTotal,
             'truncated' => $truncated,
             'max_records' => $maxRecords,
             'checkpoint_enabled' => $checkpointEnabled,

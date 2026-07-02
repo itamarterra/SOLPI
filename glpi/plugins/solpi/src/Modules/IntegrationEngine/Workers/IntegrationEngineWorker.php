@@ -118,6 +118,7 @@ final class IntegrationEngineWorker
                     'name' => $job['name'] ?? '',
                     'batch_index' => $queueMeta['batch_index'] ?? null,
                     'batch_count' => $queueMeta['batch_count'] ?? null,
+                    'batch_total' => $queueMeta['batch_total'] ?? null,
                     'batch_size' => $queueMeta['batch_size'] ?? null,
                     'batch_jobs_in_chunk' => $queueMeta['batch_jobs_in_chunk'] ?? null,
                     'canonical_id' => $resolution['canonical_id'] ?? null,
@@ -146,6 +147,7 @@ final class IntegrationEngineWorker
                     'job_id' => $jobId,
                     'batch_index' => $queueMeta['batch_index'] ?? null,
                     'batch_count' => $queueMeta['batch_count'] ?? null,
+                    'batch_total' => $queueMeta['batch_total'] ?? null,
                     'error' => $e->getMessage(),
                 ]);
             }
