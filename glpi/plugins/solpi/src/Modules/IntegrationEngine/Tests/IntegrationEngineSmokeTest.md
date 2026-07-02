@@ -300,6 +300,20 @@ Comportamento:
 Formato da linha historica:
 - `recorded_at`, `base_url`, `sizes`, `batch_size`, `worker_limit`, `rows[]`.
 
+## 20) Relatorio de tendencia
+
+Gerar relatorio comparando a ultima execucao com a anterior:
+
+- `php src/Modules/IntegrationEngine/Tests/IntegrationEngineBenchmarkTrendReport.php`
+
+Opcional (janela customizada):
+
+- `php src/Modules/IntegrationEngine/Tests/IntegrationEngineBenchmarkTrendReport.php --last=7`
+
+Saida esperada:
+- Tabela com `latest_throughput`, `prev_throughput`, `delta_abs`, `delta_pct` por volume.
+- Indicador agregado `mean_delta_throughput_abs`.
+
 Todos aceitam envelope:
 {
 	"apikey": "SEU_SEGREDO",
