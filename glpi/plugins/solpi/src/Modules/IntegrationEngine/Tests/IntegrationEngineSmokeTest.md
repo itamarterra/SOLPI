@@ -1,8 +1,24 @@
-# IntegrationEngine Smoke Test (Fase 5)
+# IntegrationEngine Smoke Test (Fase 6)
 
 ## Pre requisitos
 - API ativa em /glpi/plugins/solpi/api/index.php
 - Segredo configurado em SOLPI_WEBHOOK_SECRET (ou evolution.auth_key)
+
+## Runner automatizado (recomendado)
+
+Execute o script unico com validacao de respostas esperadas:
+
+- `php src/Modules/IntegrationEngine/Tests/IntegrationEngineSmokeRunner.php --base-url="http://localhost/glpi/plugins/solpi/api/index.php" --api-key="SEU_SEGREDO"`
+
+Fluxo coberto pelo runner:
+- GET /integration-engine/adapters
+- POST /integration-engine/ingest
+- POST /integration-engine/ingest/adapter (json)
+- POST /integration-engine/ingest/adapter (json truncado + checkpoint)
+- POST /integration-engine/worker/run-once
+- POST /integration-engine/classify
+- GET /integration-engine/jobs?limit=10
+- GET /integration-engine/summary
 
 ## 1) Descobrir adapters suportados
 GET /integration-engine/adapters
@@ -220,6 +236,15 @@ Resultado esperado:
 
 Consulta checkpoint salvo:
 - GET /integration-engine/checkpoints?source=erp_sql&adapter=sql&name=companies_sync
+
+## 16) Summary operacional da Fase 1
+
+Depois do runner, valide no resumo:
+
+- `batches.jobs_with_meta > 0`
+- `batches.records_total >= batches.records_queued`
+- `batches.truncated_jobs >= 1` (quando o passo 9.1 for executado)
+- `batches.checkpoint_jobs >= 1`
 
 Todos aceitam envelope:
 {

@@ -26,6 +26,14 @@ $steps = [
         'method' => 'GET',
         'path' => '/integration-engine/adapters',
         'body' => ['apikey' => $apiKey],
+        'expect' => static function (array $response): array {
+            $items = $response['data']['items'] ?? null;
+            if (!is_array($items) || $items === []) {
+                return [false, 'missing adapters list'];
+            }
+
+            return [true, ''];
+        },
     ],
     [
         'name' => 'ingest baseline',
@@ -41,6 +49,14 @@ $steps = [
                 'email' => 'smoke.runner@acme.test',
             ],
         ],
+        'expect' => static function (array $response): array {
+            $status = (string)($response['data']['status'] ?? '');
+            if ($status !== 'queued' && $status !== 'duplicate') {
+                return [false, 'expected status queued|duplicate'];
+            }
+
+            return [true, ''];
+        },
     ],
     [
         'name' => 'ingest via json adapter',
@@ -66,6 +82,19 @@ $steps = [
                 ],
             ],
         ],
+        'expect' => static function (array $response): array {
+            $data = is_array($response['data'] ?? null) ? $response['data'] : [];
+            $status = (string)($data['status'] ?? '');
+            if ($status !== 'queued') {
+                return [false, 'expected status queued'];
+            }
+
+            if (!isset($data['records_total']) || (int)$data['records_total'] < 1) {
+                return [false, 'records_total should be >= 1'];
+            }
+
+            return [true, ''];
+        },
     ],
     [
         'name' => 'ingest json truncated checkpoint',
@@ -101,6 +130,23 @@ $steps = [
                 ],
             ],
         ],
+        'expect' => static function (array $response): array {
+            $data = is_array($response['data'] ?? null) ? $response['data'] : [];
+            if (($data['truncated'] ?? null) !== true) {
+                return [false, 'expected truncated=true'];
+            }
+
+            if (($data['checkpoint_enabled'] ?? null) !== true) {
+                return [false, 'expected checkpoint_enabled=true'];
+            }
+
+            $checkpointOut = (string)($data['checkpoint_out'] ?? '');
+            if ($checkpointOut === '') {
+                return [false, 'expected checkpoint_out to be filled'];
+            }
+
+            return [true, ''];
+        },
     ],
     [
         'name' => 'run worker once',
@@ -110,6 +156,14 @@ $steps = [
             'apikey' => $apiKey,
             'limit' => 20,
         ],
+        'expect' => static function (array $response): array {
+            $status = (string)($response['data']['status'] ?? '');
+            if ($status !== 'ok') {
+                return [false, 'expected status ok'];
+            }
+
+            return [true, ''];
+        },
     ],
     [
         'name' => 'classify text',
@@ -122,18 +176,46 @@ $steps = [
                 'text' => 'Servidor indisponivel com erro critico apos atualizacao de release.',
             ],
         ],
+        'expect' => static function (array $response): array {
+            $status = (string)($response['data']['status'] ?? '');
+            if ($status !== 'classified' && $status !== 'review_required') {
+                return [false, 'expected status classified|review_required'];
+            }
+
+            return [true, ''];
+        },
     ],
     [
         'name' => 'list jobs',
         'method' => 'GET',
         'path' => '/integration-engine/jobs?limit=10',
         'body' => ['apikey' => $apiKey],
+        'expect' => static function (array $response): array {
+            $items = $response['data']['items']['items'] ?? null;
+            if (!is_array($items)) {
+                return [false, 'expected jobs.items.items array'];
+            }
+
+            return [true, ''];
+        },
     ],
     [
         'name' => 'integration summary',
         'method' => 'GET',
         'path' => '/integration-engine/summary',
         'body' => ['apikey' => $apiKey],
+        'expect' => static function (array $response): array {
+            $summary = $response['data'] ?? null;
+            if (!is_array($summary)) {
+                return [false, 'expected summary object'];
+            }
+
+            if (!isset($summary['jobs']) || !isset($summary['batches'])) {
+                return [false, 'missing jobs or batches in summary'];
+            }
+
+            return [true, ''];
+        },
     ],
 ];
 
@@ -144,11 +226,27 @@ foreach ($steps as $step) {
     $status = (int)$result['status'];
     $payload = $result['payload'];
 
-    $line = sprintf('[%s] %s %s -> HTTP %d', $status >= 200 && $status < 300 ? 'OK' : 'ERR', strtoupper($step['method']), $step['path'], $status);
+    $expect = $step['expect'] ?? null;
+    $expectOk = true;
+    $expectReason = '';
+    if (is_callable($expect) && is_array($payload)) {
+        $expectResult = $expect($payload);
+        if (is_array($expectResult)) {
+            $expectOk = (bool)($expectResult[0] ?? false);
+            $expectReason = (string)($expectResult[1] ?? 'unexpected response');
+        }
+    }
+
+    $isOk = $status >= 200 && $status < 300 && $expectOk;
+    $line = sprintf('[%s] %s %s -> HTTP %d', $isOk ? 'OK' : 'ERR', strtoupper($step['method']), $step['path'], $status);
     echo $line . PHP_EOL;
 
-    if ($status < 200 || $status >= 300) {
+    if ($status < 200 || $status >= 300 || !$expectOk) {
         $failed = true;
+    }
+
+    if (!$expectOk) {
+        echo 'Expectation failed: ' . $expectReason . PHP_EOL;
     }
 
     if (is_array($payload)) {
@@ -179,7 +277,14 @@ function request(string $baseUrl, string $path, string $method, array $body): ar
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
-    if (strtoupper($method) !== 'GET') {
+    if (strtoupper($method) === 'GET') {
+        if ($body !== []) {
+            $query = http_build_query($body);
+            if ($query !== '') {
+                curl_setopt($ch, CURLOPT_URL, $url . (str_contains($url, '?') ? '&' : '?') . $query);
+            }
+        }
+    } else {
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body, JSON_UNESCAPED_UNICODE));
     }
 
