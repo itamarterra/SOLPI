@@ -36,14 +36,56 @@ final class XmlAdapter implements SourceAdapterInterface
             throw new RuntimeException('XML adapter could not decode parsed XML.');
         }
 
-        $records = isset($decoded[0]) ? $decoded : [$decoded];
+        $recordsPath = (string)($payload['records_path'] ?? '');
+        $data = $recordsPath !== '' ? $this->valueByPath($decoded, $recordsPath) : $decoded;
+        $records = $this->normalizeRecords($data);
 
         return [
             'records' => $records,
             'meta' => [
                 'count' => count($records),
                 'adapter' => 'xml',
+                'records_path' => $recordsPath !== '' ? $recordsPath : null,
             ],
         ];
+    }
+
+    /**
+     * @param array<string,mixed> $data
+     * @return array<int,array<string,mixed>>
+     */
+    private function normalizeRecords(array $data): array
+    {
+        if (isset($data[0]) && is_array($data[0])) {
+            return $data;
+        }
+
+        if (isset($data[0]) && !is_array($data[0])) {
+            $rows = [];
+            foreach ($data as $value) {
+                $rows[] = ['value' => $value];
+            }
+
+            return $rows;
+        }
+
+        return [$data];
+    }
+
+    /**
+     * @param array<string,mixed> $data
+     */
+    private function valueByPath(array $data, string $path): mixed
+    {
+        $current = $data;
+        foreach (explode('.', $path) as $segment) {
+            if (!is_array($current) || !array_key_exists($segment, $current)) {
+                return [];
+            }
+
+            $current = $current[$segment];
+        }
+
+        return $current;
     }
 }
