@@ -322,12 +322,14 @@ Executa baseline historico e relatorio de tendencia em sequencia:
 
 - `php src/Modules/IntegrationEngine/Tests/IntegrationEngineBenchmarkDailyRunner.php --base-url="http://localhost:8081/solpi/index.php" --api-key="SEU_SEGREDO" --sizes="250,500,1000,2000" --batch-size=250 --worker-limit=300 --last=7`
 - `php src/Modules/IntegrationEngine/Tests/IntegrationEngineBenchmarkDailyRunner.php --base-url="http://localhost:8081/solpi/index.php" --api-key="SEU_SEGREDO" --sizes="250,500,1000,2000" --batch-size=250 --worker-limit=300 --last=7 --threshold-pct=10`
+- `php src/Modules/IntegrationEngine/Tests/IntegrationEngineBenchmarkDailyRunner.php --base-url="http://localhost:8081/solpi/index.php" --api-key="SEU_SEGREDO" --sizes="250,500,1000,2000" --batch-size=250 --worker-limit=300 --last=7 --threshold-pct=10 --report-json-file="logs/integration_engine_benchmark_latest.json" --report-md-file="logs/integration_engine_benchmark_latest.md"`
 
 Saida esperada:
 - Bloco de benchmark comparativo.
 - Gravacao no historico JSONL.
 - Relatorio latest vs previous ao final.
 - Opcionalmente falha com alerta de regressao quando o threshold percentual for ultrapassado.
+- Arquivos latest persistidos (JSON e Markdown) para consulta rapida fora do terminal.
 
 Todos aceitam envelope:
 {
