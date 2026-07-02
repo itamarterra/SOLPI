@@ -13,6 +13,7 @@ declare(strict_types=1);
  *     --batch-size=250 \
  *     --worker-limit=300 \
  *     --last=7 \
+ *     --days=7 \
  *     --threshold-pct=10 \
  *     --report-json-file="logs/integration_engine_benchmark_latest.json" \
  *     --report-md-file="logs/integration_engine_benchmark_latest.md"
@@ -26,6 +27,7 @@ $options = getopt('', [
     'worker-limit::',
     'history-file::',
     'last::',
+    'days::',
     'threshold-pct::',
     'report-json-file::',
     'report-md-file::',
@@ -37,6 +39,7 @@ $sizes = (string)($options['sizes'] ?? '250,500,1000,2000');
 $batchSize = max(1, min(1000, (int)($options['batch-size'] ?? 250)));
 $workerLimit = max(1, min(2000, (int)($options['worker-limit'] ?? 300)));
 $last = max(2, (int)($options['last'] ?? 7));
+$days = max(0, (int)($options['days'] ?? 0));
 $thresholdPct = max(0.0, (float)($options['threshold-pct'] ?? 0.0));
 
 $pluginRoot = dirname(__DIR__, 4);
@@ -89,13 +92,20 @@ if ($historyResult['exitCode'] !== 0) {
 }
 
 echo PHP_EOL . '=== Step 2/2: trend report ===' . PHP_EOL;
-$trendResult = runCommand([
+$trendCommand = [
     escapeshellarg(PHP_BINARY),
     escapeshellarg($trendRunner),
     '--history-file=' . escapeshellarg($historyFile),
-    '--last=' . (string)$last,
     '--threshold-pct=' . (string)$thresholdPct,
-]);
+];
+
+if ($days > 0) {
+    $trendCommand[] = '--days=' . (string)$days;
+} else {
+    $trendCommand[] = '--last=' . (string)$last;
+}
+
+$trendResult = runCommand($trendCommand);
 
 if ($trendResult['stdout'] !== '') {
     echo $trendResult['stdout'];
@@ -113,7 +123,8 @@ $report = [
     'sizes' => $sizes,
     'batch_size' => $batchSize,
     'worker_limit' => $workerLimit,
-    'last' => $last,
+    'last' => $days > 0 ? null : $last,
+    'days' => $days > 0 ? $days : null,
     'threshold_pct' => $thresholdPct,
     'history_file' => $historyFile,
     'trend_exit_code' => $trendResult['exitCode'],

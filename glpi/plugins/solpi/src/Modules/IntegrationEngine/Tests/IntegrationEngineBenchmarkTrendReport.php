@@ -8,15 +8,17 @@ declare(strict_types=1);
  * Uso:
  *   php src/Modules/IntegrationEngine/Tests/IntegrationEngineBenchmarkTrendReport.php
  *   php src/Modules/IntegrationEngine/Tests/IntegrationEngineBenchmarkTrendReport.php --history-file="logs/integration_engine_benchmark_history.jsonl" --last=7
+ *   php src/Modules/IntegrationEngine/Tests/IntegrationEngineBenchmarkTrendReport.php --days=7
  *   php src/Modules/IntegrationEngine/Tests/IntegrationEngineBenchmarkTrendReport.php --threshold-pct=10
  */
 
-$options = getopt('', ['history-file::', 'last::', 'threshold-pct::']);
+$options = getopt('', ['history-file::', 'last::', 'days::', 'threshold-pct::']);
 
 $pluginRoot = dirname(__DIR__, 4);
 $defaultHistoryFile = $pluginRoot . '/logs/integration_engine_benchmark_history.jsonl';
 $historyFile = (string)($options['history-file'] ?? $defaultHistoryFile);
 $last = max(2, (int)($options['last'] ?? 10));
+$days = max(0, (int)($options['days'] ?? 0));
 $thresholdPct = max(0.0, (float)($options['threshold-pct'] ?? 0.0));
 
 if (!is_file($historyFile)) {
@@ -45,7 +47,27 @@ if ($entries === []) {
     exit(1);
 }
 
-$entries = array_slice($entries, -$last);
+$windowMode = 'last';
+if ($days > 0) {
+    $windowMode = 'days';
+    $cutoff = time() - ($days * 86400);
+    $entries = array_values(array_filter($entries, static function (array $entry) use ($cutoff): bool {
+        $recordedAt = (string)($entry['recorded_at'] ?? '');
+        if ($recordedAt === '') {
+            return false;
+        }
+
+        $ts = strtotime($recordedAt);
+        return $ts !== false && $ts >= $cutoff;
+    }));
+
+    if ($entries === []) {
+        fwrite(STDERR, 'No entries found for days window: ' . $days . PHP_EOL);
+        exit(1);
+    }
+} else {
+    $entries = array_slice($entries, -$last);
+}
 $latest = $entries[array_key_last($entries)];
 $previous = count($entries) > 1 ? $entries[count($entries) - 2] : null;
 
@@ -71,6 +93,12 @@ sort($recordSizes);
 
 echo 'IntegrationEngine Benchmark Trend' . PHP_EOL;
 echo 'history_file: ' . $historyFile . PHP_EOL;
+echo 'window_mode: ' . $windowMode . PHP_EOL;
+if ($windowMode === 'days') {
+    echo 'window_days: ' . $days . PHP_EOL;
+} else {
+    echo 'window_last: ' . $last . PHP_EOL;
+}
 echo 'entries_analyzed: ' . count($entries) . PHP_EOL;
 echo 'latest_recorded_at: ' . (string)($latest['recorded_at'] ?? '-') . PHP_EOL;
 if ($previous !== null) {
@@ -161,6 +189,9 @@ echo json_encode([
     'latest_recorded_at' => $latest['recorded_at'] ?? null,
     'previous_recorded_at' => $previous['recorded_at'] ?? null,
     'reference_mode' => 'latest_available_in_window',
+    'window_mode' => $windowMode,
+    'window_days' => $windowMode === 'days' ? $days : null,
+    'window_last' => $windowMode === 'last' ? $last : null,
     'sizes' => $recordSizes,
     'rows' => $rowsOutput,
     'mean_delta_throughput_abs' => $meanDelta,
