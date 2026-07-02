@@ -156,6 +156,16 @@ Resultado esperado:
 
 - `BatchContextSmoke OK`
 
+## 11) Summary calculator local
+
+Execute o self-check local:
+
+- `php src/Modules/IntegrationEngine/Tests/IntegrationSummaryCalculatorSmoke.php`
+
+Resultado esperado:
+
+- `IntegrationSummaryCalculatorSmoke OK`
+
 Consulta checkpoint salvo:
 - GET /integration-engine/checkpoints?source=erp_sql&adapter=sql&name=companies_sync
 

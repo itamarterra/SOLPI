@@ -11,6 +11,8 @@ final class IntegrationSummaryService
 {
     private DBmysql $db;
     private GovernanceService $governance;
+    private QueueService $queue;
+    private IntegrationSummaryCalculator $calculator;
 
     public function __construct()
     {
@@ -22,6 +24,8 @@ final class IntegrationSummaryService
 
         $this->db = $DB;
         $this->governance = new GovernanceService();
+        $this->queue = new QueueService();
+        $this->calculator = new IntegrationSummaryCalculator();
     }
 
     /**
@@ -45,6 +49,7 @@ final class IntegrationSummaryService
         $checkpointTotal = $this->count('glpi_plugin_solpi_source_checkpoints');
         $qualityReports = $this->governance->recentQualityReports(1);
         $latestQualityReport = $qualityReports[0] ?? null;
+        $batchSummary = $this->calculator->summarizeJobs($this->queue->recent(200));
 
         return [
             'status' => 'ok',
@@ -59,6 +64,7 @@ final class IntegrationSummaryService
                 'done' => $jobsDone,
                 'dead' => $jobsDead,
             ],
+            'batches' => $batchSummary,
             'review_queue' => [
                 'total' => $reviewTotal,
                 'pending' => $reviewPending,

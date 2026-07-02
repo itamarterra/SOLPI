@@ -118,6 +118,17 @@ Em caso de erro:
     "done": 95,
     "dead": 2
   },
+  "batches": {
+    "jobs_with_meta": 4,
+    "truncated_jobs": 1,
+    "checkpoint_jobs": 2,
+    "records_total": 180,
+    "records_queued": 175,
+    "records_duplicate": 5,
+    "batch_count_max": 2,
+    "batch_total_max": 2,
+    "batch_size_max": 250
+  },
   "review_queue": {
     "total": 3,
     "pending": 1

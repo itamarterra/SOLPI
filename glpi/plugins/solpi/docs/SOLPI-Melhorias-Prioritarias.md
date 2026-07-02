@@ -12,8 +12,8 @@
 
 ## 3. Observabilidade operacional
 - [x] Expor resumo de jobs, batches, duplicados, truncados e falhas por janela.
-- [ ] Padronizar metadados de execucao em respostas da API.
-- [ ] Melhorar diagnostico para suporte e operacao.
+- [x] Padronizar metadados de execucao em respostas da API.
+- [x] Melhorar diagnostico para suporte e operacao.
 
 ## 4. Contratos de API
 - [x] Uniformizar respostas de ingestao direta, por adapter, checkpoints e worker.

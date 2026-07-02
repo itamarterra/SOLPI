@@ -94,6 +94,12 @@ $steps = [
         'path' => '/integration-engine/jobs?limit=10',
         'body' => ['apikey' => $apiKey],
     ],
+    [
+        'name' => 'integration summary',
+        'method' => 'GET',
+        'path' => '/integration-engine/summary',
+        'body' => ['apikey' => $apiKey],
+    ],
 ];
 
 $failed = false;
