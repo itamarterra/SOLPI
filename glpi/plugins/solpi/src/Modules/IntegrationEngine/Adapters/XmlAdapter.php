@@ -38,6 +38,7 @@ final class XmlAdapter implements SourceAdapterInterface
 
         $recordsPath = (string)($payload['records_path'] ?? '');
         $data = $recordsPath !== '' ? $this->valueByPath($decoded, $recordsPath) : $decoded;
+        $data = $this->unwrapSingleRoot($data);
         $records = $this->normalizeRecords($data);
 
         return [
@@ -70,6 +71,24 @@ final class XmlAdapter implements SourceAdapterInterface
         }
 
         return [$data];
+    }
+
+    /**
+     * @param array<string,mixed> $data
+     * @return array<string,mixed>
+     */
+    private function unwrapSingleRoot(array $data): array
+    {
+        if (count($data) !== 1) {
+            return $data;
+        }
+
+        $value = reset($data);
+        if (!is_array($value)) {
+            return $data;
+        }
+
+        return $value;
     }
 
     /**
