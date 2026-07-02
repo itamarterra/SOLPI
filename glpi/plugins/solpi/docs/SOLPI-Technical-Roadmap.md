@@ -133,6 +133,10 @@ Acceptance criteria:
 6. Harden security and multi-tenant isolation.
 7. Prepare for enterprise release operations.
 
+## Fase 1 Execution Detail
+
+- [SOLPI Fase 1 Plano Semanal](SOLPI-Fase-1-Plano-Semanal.md)
+
 ## References
 
 - [Enterprise Vision and Roadmap](SOLPI-Enterprise-Vision-Roadmap.md)
