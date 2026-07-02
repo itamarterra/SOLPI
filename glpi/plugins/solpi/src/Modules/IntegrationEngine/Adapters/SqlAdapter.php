@@ -51,6 +51,7 @@ final class SqlAdapter implements SourceAdapterInterface
                 $maxPages = max(1, (int)($pagination['max_pages'] ?? 100));
                 $offset = max(0, (int)($pagination['start_offset'] ?? 0));
                 $stopWhenEmpty = (bool)($pagination['stop_when_empty'] ?? true);
+                $stopWhenShortPage = (bool)($pagination['stop_when_short_page'] ?? true);
 
                 for ($i = 0; $i < $maxPages; $i++) {
                     $pagedQuery = $this->ensurePaginationClause($workingQuery);
@@ -76,6 +77,10 @@ final class SqlAdapter implements SourceAdapterInterface
                         break;
                     }
 
+                    if ($stopWhenShortPage && count($batchRecords) < $pageSize) {
+                        break;
+                    }
+
                     $offset += $pageSize;
                 }
             }
@@ -89,6 +94,7 @@ final class SqlAdapter implements SourceAdapterInterface
                     'count' => is_array($records) ? count($records) : 0,
                     'pagination_enabled' => $enabledPagination,
                     'pages_fetched' => $pagesFetched,
+                    'stop_when_short_page' => $enabledPagination ? $stopWhenShortPage : null,
                     'incremental_column' => $incrementalColumn,
                     'max_incremental_value' => $maxIncrementalValue,
                 ],
