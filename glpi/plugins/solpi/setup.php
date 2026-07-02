@@ -32,6 +32,13 @@ function plugin_init_solpi(): void
     global $PLUGIN_HOOKS;
 
     $PLUGIN_HOOKS['csrf_compliant']['solpi'] = true;
+    $importMenuFile = __DIR__ . '/src/Menu/ImportMenu.php';
+    if (is_file($importMenuFile)) {
+        require_once $importMenuFile;
+    }
+    $PLUGIN_HOOKS['menu_toadd']['solpi'] = [
+        'plugins' => SOLPI\Menu\ImportMenu::class,
+    ];
 
     // Hook principal: disparado quando tecnico adiciona solucao ao ticket
     $PLUGIN_HOOKS['item_add']['solpi'] = ['ITILSolution' => 'plugin_solpi_on_solution_added'];
