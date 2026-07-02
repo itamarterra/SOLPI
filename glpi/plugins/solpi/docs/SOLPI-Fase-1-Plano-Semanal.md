@@ -13,7 +13,7 @@ Garantir que cada ingestao carregue contexto suficiente para auditoria, troubles
 
 ### Tarefas
 - Consolidar o campo `_queue_meta` no payload enfileirado.
-- Registrar `batch_size`, `batch_count`, `batch_index` e `batch_jobs_in_chunk` na auditoria do worker.
+- Registrar `batch_size`, `batch_count`, `batch_total`, `batch_index` e `batch_jobs_in_chunk` na auditoria do worker.
 - Manter `records_total`, `records_queued`, `records_duplicate` e `truncated` em todo o fluxo.
 - Garantir que falhas e sucessos carreguem contexto de lote no log.
 
