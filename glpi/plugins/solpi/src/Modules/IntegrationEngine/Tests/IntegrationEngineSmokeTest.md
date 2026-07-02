@@ -285,6 +285,21 @@ Saida esperada:
 - Tabela comparativa com `enqueue_s`, `worker_s`, `total_s` e `throughput_rec_s` por volume.
 - Bloco JSON com as mesmas linhas para automacao.
 
+## 19) Baseline diario com historico
+
+Execute o runner de baseline historico:
+
+- `php src/Modules/IntegrationEngine/Tests/IntegrationEngineBenchmarkHistoryRunner.php --base-url="http://localhost:8081/solpi/index.php" --api-key="SEU_SEGREDO" --sizes="250,500,1000,2000" --batch-size=250 --worker-limit=300`
+
+Comportamento:
+- Executa o benchmark comparativo completo.
+- Preserva a saida de tabela/JSON no terminal.
+- Grava uma linha JSON por execucao em:
+	- `logs/integration_engine_benchmark_history.jsonl`
+
+Formato da linha historica:
+- `recorded_at`, `base_url`, `sizes`, `batch_size`, `worker_limit`, `rows[]`.
+
 Todos aceitam envelope:
 {
 	"apikey": "SEU_SEGREDO",
