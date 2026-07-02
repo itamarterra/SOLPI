@@ -180,7 +180,16 @@ final class IntegrationOrchestratorService
             ];
         }
 
-        $jobIds = $batchJobs !== [] ? $this->queue->pushBatch($batchJobs) : [];
+        $requestedBatchSize = (int)($context['batch_size'] ?? $adapterPayload['batch_size'] ?? 250);
+        $batchSize = max(1, min(1000, $requestedBatchSize));
+        $jobIds = [];
+        $batchCount = 0;
+
+        foreach (array_chunk($batchJobs, $batchSize) as $jobChunk) {
+            $chunkIds = $this->queue->pushBatch($jobChunk);
+            $jobIds = array_merge($jobIds, $chunkIds);
+            $batchCount++;
+        }
 
         return [
             'status' => 'queued',
@@ -191,6 +200,8 @@ final class IntegrationOrchestratorService
             'records_queued' => count($jobIds),
             'records_duplicate' => $duplicates,
             'job_ids' => $jobIds,
+            'batch_size' => $batchSize,
+            'batch_count' => $batchCount,
             'truncated' => $truncated,
             'max_records' => $maxRecords,
             'checkpoint_enabled' => $checkpointEnabled,
