@@ -5,14 +5,63 @@ namespace SOLPI\Modules\Tickets;
 
 final class TicketController
 {
-    public function __call(string $method, array $arguments): mixed
+    private TicketRepository $repository;
+
+    public function __construct()
     {
-        return null;
+        $this->repository = new TicketRepository();
     }
 
-    public function __get(string $name): mixed
+    /**
+     * @return array<string,mixed>
+     */
+    public function summary(): array
     {
-        return null;
+        return $this->repository->statusSummary();
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    public function recent(int $limit = 20): array
+    {
+        return $this->repository->recent($limit);
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function close(int $glpiTicketId): array
+    {
+        $this->repository->closeGLPITicket($glpiTicketId);
+
+        $solpi = $this->repository->findByGLPITicketId($glpiTicketId);
+        if (is_array($solpi) && isset($solpi['id'])) {
+            $this->repository->updateStatus((int)$solpi['id'], 'AWAITING_RATING');
+        }
+
+        return [
+            'status' => 'closed',
+            'glpi_ticket_id' => $glpiTicketId,
+        ];
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function reopen(int $glpiTicketId): array
+    {
+        $this->repository->reopenGLPITicket($glpiTicketId);
+
+        $solpi = $this->repository->findByGLPITicketId($glpiTicketId);
+        if (is_array($solpi) && isset($solpi['id'])) {
+            $this->repository->updateStatus((int)$solpi['id'], 'OPEN');
+        }
+
+        return [
+            'status' => 'reopened',
+            'glpi_ticket_id' => $glpiTicketId,
+        ];
     }
 }
 

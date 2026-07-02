@@ -5,14 +5,34 @@ namespace SOLPI\Modules\Settings;
 
 final class SettingsController
 {
-    public function __call(string $method, array $arguments): mixed
+    private SettingsService $service;
+
+    public function __construct()
     {
-        return null;
+        $this->service = new SettingsService();
     }
 
-    public function __get(string $name): mixed
+    /**
+     * @return array<string,mixed>
+     */
+    public function list(string $module = 'core'): array
     {
-        return null;
+        return [
+            'module' => $module,
+            'items' => $this->service->all($module),
+        ];
+    }
+
+    public function set(string $module, string $key, mixed $value, string $type = 'string'): array
+    {
+        $this->service->set($module, $key, $value, $type);
+
+        return [
+            'status' => 'saved',
+            'module' => $module,
+            'key' => $key,
+            'value' => $this->service->get($module, $key),
+        ];
     }
 }
 

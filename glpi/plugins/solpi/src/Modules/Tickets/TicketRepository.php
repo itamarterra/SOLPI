@@ -154,4 +154,87 @@ final class TicketRepository
             'date_mod' => date('Y-m-d H:i:s'),
         ], ['id' => $glpiTicketId]);
     }
+
+    /**
+     * @return array<string,int>
+     */
+    public function statusSummary(): array
+    {
+        $summary = [
+            'open' => 0,
+            'awaiting_confirmation' => 0,
+            'awaiting_rating' => 0,
+            'rated' => 0,
+            'total' => 0,
+        ];
+
+        foreach ($this->db->request([
+            'COUNT' => 'c',
+            'FROM' => 'glpi_plugin_solpi_tickets',
+            'WHERE' => ['status' => 'OPEN'],
+        ]) as $row) {
+            $summary['open'] = (int)$row['c'];
+        }
+
+        foreach ($this->db->request([
+            'COUNT' => 'c',
+            'FROM' => 'glpi_plugin_solpi_tickets',
+            'WHERE' => ['status' => 'AWAITING_CONFIRMATION'],
+        ]) as $row) {
+            $summary['awaiting_confirmation'] = (int)$row['c'];
+        }
+
+        foreach ($this->db->request([
+            'COUNT' => 'c',
+            'FROM' => 'glpi_plugin_solpi_tickets',
+            'WHERE' => ['status' => 'AWAITING_RATING'],
+        ]) as $row) {
+            $summary['awaiting_rating'] = (int)$row['c'];
+        }
+
+        foreach ($this->db->request([
+            'COUNT' => 'c',
+            'FROM' => 'glpi_plugin_solpi_tickets',
+            'WHERE' => ['status' => 'RATED'],
+        ]) as $row) {
+            $summary['rated'] = (int)$row['c'];
+        }
+
+        foreach ($this->db->request([
+            'COUNT' => 'c',
+            'FROM' => 'glpi_plugin_solpi_tickets',
+        ]) as $row) {
+            $summary['total'] = (int)$row['c'];
+        }
+
+        return $summary;
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    public function recent(int $limit = 20): array
+    {
+        $limit = max(1, min(100, $limit));
+        $rows = [];
+
+        foreach ($this->db->request([
+            'FROM' => 'glpi_plugin_solpi_tickets',
+            'ORDER' => 'id DESC',
+            'LIMIT' => $limit,
+        ]) as $row) {
+            $rows[] = [
+                'id' => (int)($row['id'] ?? 0),
+                'glpi_ticket_id' => (int)($row['glpi_ticket_id'] ?? 0),
+                'alert_id' => isset($row['alert_id']) ? (int)$row['alert_id'] : null,
+                'status' => (string)($row['status'] ?? 'OPEN'),
+                'rating' => isset($row['rating']) ? (int)$row['rating'] : null,
+                'opened_at' => (string)($row['opened_at'] ?? ''),
+                'closed_at' => $row['closed_at'] ?? null,
+                'updated_at' => (string)($row['updated_at'] ?? ''),
+            ];
+        }
+
+        return $rows;
+    }
 }
