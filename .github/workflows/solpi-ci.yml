@@ -1,0 +1,38 @@
+name: SOLPI CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  php-guard:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Check minimum PHP version
+        working-directory: glpi/plugins/solpi
+        run: php tools/check_php_version.php 8.3.0
+
+      - name: Validate composer metadata
+        working-directory: glpi/plugins/solpi
+        run: composer validate --no-check-publish
+
+      - name: Syntax check key files
+        working-directory: glpi/plugins/solpi
+        run: |
+          php -l inc/bootstrap.php
+          php -l src/Database/InstallValidator.php
+          php -l src/Modules/IntegrationEngine/Services/IntegrationSummaryService.php
+          php -l src/Modules/IntegrationEngine/Services/IntegrationSummaryCalculator.php
+          php -l src/Modules/IntegrationEngine/Tests/IntegrationSummaryCalculatorSmoke.php

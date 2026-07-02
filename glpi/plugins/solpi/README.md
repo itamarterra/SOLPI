@@ -2,6 +2,8 @@
 
 # Environment & Secrets
 
+Requisito minimo de runtime: PHP 8.3.0. O CI do projeto bloqueia execucao abaixo dessa versao.
+
 This project stores several integration tokens (Zabbix, Evolution, AI provider) and the webhook verification secret.
 
 Recommended steps before deploying:

@@ -2,7 +2,7 @@
 
 ## 1. Ambiente e compatibilidade
 - [x] Expor claramente o requisito minimo de PHP 8.3.
-- [ ] Adicionar checagem de ambiente/CI para falhar cedo quando a versao estiver abaixo do minimo.
+- [x] Adicionar checagem de ambiente/CI para falhar cedo quando a versao estiver abaixo do minimo.
 - [ ] Garantir que a documentacao principal destaque o requisito de runtime.
 
 ## 2. Cobertura automatizada
