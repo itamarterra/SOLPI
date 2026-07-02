@@ -16,7 +16,7 @@
 - [ ] Melhorar diagnostico para suporte e operacao.
 
 ## 4. Contratos de API
-- [ ] Uniformizar respostas de ingestao direta, por adapter, checkpoints e worker.
+- [x] Uniformizar respostas de ingestao direta, por adapter, checkpoints e worker.
 - [ ] Documentar schemas principais de entrada e saida.
 - [ ] Revisar consistencia de nomes e metadados.
 

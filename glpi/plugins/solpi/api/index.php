@@ -26,11 +26,10 @@ try {
 	$handler = $routes[$method][$path] ?? null;
 
 	if (!is_callable($handler)) {
-		solpi_api_send([
-			'error' => 'Route not found',
+		solpi_api_send(solpi_api_error('Route not found', 404, [
 			'method' => $method,
 			'path' => $path,
-		], 404);
+		]), 404);
 	}
 
 	if ($path !== '/health' && $path !== '/') {
@@ -43,12 +42,22 @@ try {
 		$result = ['data' => $result];
 	}
 
-	solpi_api_send($result, 200);
+	if (array_key_exists('error', $result)) {
+		$errorDetails = [];
+		if (is_string($result['error'])) {
+			$errorDetails['message'] = $result['error'];
+		} elseif (is_array($result['error'])) {
+			$errorDetails = $result['error'];
+		}
+
+		solpi_api_send(solpi_api_error((string)($errorDetails['message'] ?? 'Error'), 400, $errorDetails), 400);
+	}
+
+	solpi_api_send(solpi_api_success($result), 200);
 } catch (Throwable $e) {
-	solpi_api_send([
-		'error' => $e->getMessage(),
+	solpi_api_send(solpi_api_error($e->getMessage(), 500, [
 		'file' => basename($e->getFile()),
 		'line' => $e->getLine(),
-	], 500);
+	]), 500);
 }
 

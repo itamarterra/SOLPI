@@ -39,6 +39,7 @@ Fase 5 implementada:
 - SQL adapter com modo incremental e paginação por LIMIT/OFFSET para cargas volumosas.
 - FTP/SFTP adapters com modo list e modo download (conteúdo em text/base64).
 - Guardrail de volume no ingest por adapter com max_records e truncamento controlado.
+- Respostas da API padronizadas em envelope com `status`, `time`, `data` e `error` quando aplicável.
 - Smoke test atualizado em src/Modules/IntegrationEngine/Tests/IntegrationEngineSmokeTest.md.
 - Runner CLI de smoke em src/Modules/IntegrationEngine/Tests/IntegrationEngineSmokeRunner.php.
 - Self-check local de batch context em src/Modules/IntegrationEngine/Tests/BatchContextSmoke.php.

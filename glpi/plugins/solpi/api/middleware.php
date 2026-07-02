@@ -72,6 +72,48 @@ function solpi_api_send(array $data, int $status = 200): never
 	exit;
 }
 
+/**
+ * @param array<string,mixed> $data
+ * @param array<string,mixed> $meta
+ * @return array<string,mixed>
+ */
+function solpi_api_success(array $data, array $meta = []): array
+{
+	$response = [
+		'status' => 'ok',
+		'time' => date(DATE_ATOM),
+		'data' => $data,
+	];
+
+	if ($meta !== []) {
+		$response['meta'] = $meta;
+	}
+
+	return $response;
+}
+
+/**
+ * @param array<string,mixed> $details
+ * @return array<string,mixed>
+ */
+function solpi_api_error(string $message, int $status = 400, array $details = []): array
+{
+	$response = [
+		'status' => 'error',
+		'time' => date(DATE_ATOM),
+		'error' => [
+			'message' => $message,
+			'code' => $status,
+		],
+	];
+
+	if ($details !== []) {
+		$response['error']['details'] = $details;
+	}
+
+	return $response;
+}
+
 function solpi_api_require_auth(array $payload = []): void
 {
 	$config = new Config();
@@ -79,7 +121,7 @@ function solpi_api_require_auth(array $payload = []): void
 
 	$expected = (string)($config->get('evolution.auth_key') ?: getenv('SOLPI_WEBHOOK_SECRET') ?: '');
 	if ($expected === '') {
-		solpi_api_send(['error' => 'API secret is not configured'], 503);
+		solpi_api_send(solpi_api_error('API secret is not configured', 503), 503);
 	}
 
 	$headers = solpi_api_headers();
@@ -94,7 +136,7 @@ function solpi_api_require_auth(array $payload = []): void
 	);
 
 	if (!hash_equals($expected, $provided)) {
-		solpi_api_send(['error' => 'Unauthorized'], 401);
+		solpi_api_send(solpi_api_error('Unauthorized', 401), 401);
 	}
 }
 
