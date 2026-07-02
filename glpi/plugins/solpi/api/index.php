@@ -59,7 +59,7 @@ try {
 	$method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
 	$path = solpi_api_path();
 	$payload = solpi_api_json_body();
-	$query = is_array($_GET) ? $_GET : [];
+	$query = $_GET;
 
 	$routes = solpi_api_routes();
 	$handler = $routes[$method][$path] ?? null;

@@ -10,10 +10,7 @@ use SOLPI\Core\Config;
 function solpi_api_headers(): array
 {
 	if (function_exists('getallheaders')) {
-		$headers = getallheaders();
-		if (is_array($headers)) {
-			return $headers;
-		}
+		return getallheaders();
 	}
 
 	$headers = [];
