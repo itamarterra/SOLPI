@@ -17,3 +17,9 @@ Recommended steps before deploying:
 
 Adjust your deployment to set these env vars (systemd, container, or CI secret manager).
 
+## Project Vision
+
+- [SOLPI Enterprise Vision and Roadmap](docs/SOLPI-Enterprise-Vision-Roadmap.md)
+- [Integration Engine Architecture Blueprint](docs/SOLPI-IntegrationEngine-Architecture.md)
+- [Integration Engine README](src/Modules/IntegrationEngine/README.md)
+
