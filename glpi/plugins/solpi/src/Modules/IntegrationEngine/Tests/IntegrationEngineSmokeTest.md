@@ -23,6 +23,9 @@ Fluxo coberto pelo runner:
 - GET /integration-engine/jobs?limit=10
 - GET /integration-engine/summary
 
+Observacao operacional:
+- O runner gera um run_id unico por execucao para evitar falsos duplicados e garantir que o summary reflita metadados reais de lote/checkpoint/truncamento.
+
 ## 1) Descobrir adapters suportados
 GET /integration-engine/adapters
 

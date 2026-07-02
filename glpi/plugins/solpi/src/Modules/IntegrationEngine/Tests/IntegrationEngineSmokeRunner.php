@@ -20,6 +20,8 @@ if ($baseUrl === '' || $apiKey === '') {
     exit(1);
 }
 
+$runId = date('His') . substr(bin2hex(random_bytes(3)), 0, 6);
+
 $steps = [
     [
         'name' => 'list adapters',
@@ -41,12 +43,12 @@ $steps = [
         'path' => '/integration-engine/ingest',
         'body' => [
             'apikey' => $apiKey,
-            'source' => 'smoke_runner_baseline',
+            'source' => 'srb_' . $runId,
             'event' => 'upsert',
             'payload' => [
                 'entity_type' => 'company',
-                'name' => 'ACME Smoke Runner',
-                'email' => 'smoke.runner@acme.test',
+                'name' => 'ACME Smoke Runner ' . $runId,
+                'email' => 'smoke.runner.' . $runId . '@acme.test',
             ],
         ],
         'expect' => static function (array $response): array {
@@ -64,20 +66,20 @@ $steps = [
         'path' => '/integration-engine/ingest/adapter',
         'body' => [
             'apikey' => $apiKey,
-            'source' => 'smoke_runner_json',
+            'source' => 'srj_' . $runId,
             'event' => 'upsert',
             'adapter' => 'json',
             'payload' => [
                 'data' => [
                     [
                         'entity_type' => 'user',
-                        'email' => 'runner.user1@acme.test',
-                        'name' => 'Runner User 1',
+                        'email' => 'runner.user1.' . $runId . '@acme.test',
+                        'name' => 'Runner User 1 ' . $runId,
                     ],
                     [
                         'entity_type' => 'user',
-                        'email' => 'runner.user2@acme.test',
-                        'name' => 'Runner User 2',
+                        'email' => 'runner.user2.' . $runId . '@acme.test',
+                        'name' => 'Runner User 2 ' . $runId,
                     ],
                 ],
             ],
@@ -102,14 +104,14 @@ $steps = [
         'path' => '/integration-engine/ingest/adapter',
         'body' => [
             'apikey' => $apiKey,
-            'source' => 'smoke_runner_json_truncated',
+            'source' => 'srt_' . $runId,
             'event' => 'upsert',
             'adapter' => 'json',
             'context' => [
                 'max_records' => 1,
                 'checkpoint' => [
                     'enabled' => true,
-                    'name' => 'json_truncated_checkpoint',
+                    'name' => 'cp_' . $runId,
                 ],
             ],
             'payload' => [
@@ -117,14 +119,14 @@ $steps = [
                 'data' => [
                     [
                         'entity_type' => 'user',
-                        'email' => 'runner.batch1@acme.test',
-                        'name' => 'Runner Batch 1',
+                        'email' => 'runner.batch1.' . $runId . '@acme.test',
+                        'name' => 'Runner Batch 1 ' . $runId,
                         'updated_at' => '2026-07-02T12:00:00Z',
                     ],
                     [
                         'entity_type' => 'user',
-                        'email' => 'runner.batch2@acme.test',
-                        'name' => 'Runner Batch 2',
+                        'email' => 'runner.batch2.' . $runId . '@acme.test',
+                        'name' => 'Runner Batch 2 ' . $runId,
                         'updated_at' => '2026-07-02T12:05:00Z',
                     ],
                 ],
@@ -172,7 +174,7 @@ $steps = [
         'body' => [
             'apikey' => $apiKey,
             'record' => [
-                'correlation_id' => 'smoke-classification-' . date('YmdHis'),
+                'correlation_id' => 'smoke-classification-' . $runId,
                 'text' => 'Servidor indisponivel com erro critico apos atualizacao de release.',
             ],
         ],
@@ -212,6 +214,19 @@ $steps = [
 
             if (!isset($summary['jobs']) || !isset($summary['batches'])) {
                 return [false, 'missing jobs or batches in summary'];
+            }
+
+            $batches = is_array($summary['batches']) ? $summary['batches'] : [];
+            if ((int)($batches['jobs_with_meta'] ?? 0) < 1) {
+                return [false, 'expected batches.jobs_with_meta >= 1'];
+            }
+
+            if ((int)($batches['checkpoint_jobs'] ?? 0) < 1) {
+                return [false, 'expected batches.checkpoint_jobs >= 1'];
+            }
+
+            if ((int)($batches['truncated_jobs'] ?? 0) < 1) {
+                return [false, 'expected batches.truncated_jobs >= 1'];
             }
 
             return [true, ''];
