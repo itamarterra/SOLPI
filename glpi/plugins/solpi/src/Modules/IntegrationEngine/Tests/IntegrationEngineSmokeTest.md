@@ -252,6 +252,29 @@ Depois do runner, valide no resumo:
 - `batches.truncated_jobs >= 1` (quando o passo 9.1 for executado)
 - `batches.checkpoint_jobs >= 1`
 
+## 17) Cenario de carga (1000 registros)
+
+Execute o runner dedicado de carga:
+
+- `php src/Modules/IntegrationEngine/Tests/IntegrationEngineLoadRunner.php --base-url="http://localhost:8081/solpi/index.php" --api-key="SEU_SEGREDO" --records=1000 --batch-size=250 --worker-limit=300`
+
+Saidas esperadas:
+- `status=ok`
+- `records_total=1000`
+- `records_queued` maior que zero
+- `throughput_records_per_sec` maior que zero
+- `jobs_with_meta_for_source` maior que zero
+
+Campos uteis para analise:
+- `enqueue_seconds`
+- `worker_seconds`
+- `total_seconds`
+- `worker_runs`
+- `summary_batches.batch_size_max`
+
+Observacao:
+- O summary consolida `records_total`, `records_queued`, `records_duplicate`, `checkpoint_jobs` e `truncated_jobs` por `ingestion_run_id` para evitar supercontagem por job.
+
 Todos aceitam envelope:
 {
 	"apikey": "SEU_SEGREDO",

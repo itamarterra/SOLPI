@@ -188,6 +188,7 @@ final class IntegrationOrchestratorService
         $batchCount = 0;
         $batchChunks = array_chunk($batchJobs, $batchSize);
         $batchTotal = count($batchChunks);
+        $ingestionRunId = date('YmdHis') . '-' . bin2hex(random_bytes(4));
 
         foreach ($batchChunks as $batchIndex => $jobChunk) {
             $annotatedChunk = [];
@@ -214,6 +215,7 @@ final class IntegrationOrchestratorService
                         'out' => $checkpointOut,
                     ] : []
                 );
+                $job['payload']['_queue_meta']['ingestion_run_id'] = $ingestionRunId;
 
                 $annotatedChunk[] = $job;
             }

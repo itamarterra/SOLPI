@@ -21,6 +21,7 @@ final class IntegrationSummaryCalculator
         $batchCountMax = 0;
         $batchTotalMax = 0;
         $batchSizeMax = 0;
+        $countedRuns = [];
 
         foreach ($jobs as $job) {
             $payload = is_array($job['payload'] ?? null) ? $job['payload'] : [];
@@ -34,6 +35,16 @@ final class IntegrationSummaryCalculator
             $batchCountMax = max($batchCountMax, (int)($meta['batch_count'] ?? 0));
             $batchTotalMax = max($batchTotalMax, (int)($meta['batch_total'] ?? 0));
             $batchSizeMax = max($batchSizeMax, (int)($meta['batch_size'] ?? 0));
+
+            $runId = (string)($meta['ingestion_run_id'] ?? '');
+            if ($runId !== '' && isset($countedRuns[$runId])) {
+                continue;
+            }
+
+            if ($runId !== '') {
+                $countedRuns[$runId] = true;
+            }
+
             $recordsTotal += (int)($meta['records_total'] ?? 0);
             $recordsQueued += (int)($meta['records_queued'] ?? 0);
             $recordsDuplicate += (int)($meta['records_duplicate'] ?? 0);

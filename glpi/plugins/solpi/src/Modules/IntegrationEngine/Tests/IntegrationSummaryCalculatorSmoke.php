@@ -11,6 +11,7 @@ $summary = $calculator->summarizeJobs([
     [
         'payload' => [
             '_queue_meta' => [
+                'ingestion_run_id' => 'run-A',
                 'batch_count' => 1,
                 'batch_total' => 2,
                 'batch_size' => 250,
@@ -25,8 +26,24 @@ $summary = $calculator->summarizeJobs([
     [
         'payload' => [
             '_queue_meta' => [
+                'ingestion_run_id' => 'run-A',
                 'batch_count' => 2,
                 'batch_total' => 2,
+                'batch_size' => 250,
+                'records_total' => 10,
+                'records_queued' => 10,
+                'records_duplicate' => 0,
+                'truncated' => false,
+                'checkpoint_enabled' => false,
+            ],
+        ],
+    ],
+    [
+        'payload' => [
+            '_queue_meta' => [
+                'ingestion_run_id' => 'run-B',
+                'batch_count' => 1,
+                'batch_total' => 1,
                 'batch_size' => 250,
                 'records_total' => 8,
                 'records_queued' => 7,
@@ -39,7 +56,7 @@ $summary = $calculator->summarizeJobs([
 ]);
 
 $expected = [
-    'jobs_with_meta' => 2,
+    'jobs_with_meta' => 3,
     'truncated_jobs' => 1,
     'checkpoint_jobs' => 1,
     'records_total' => 18,
