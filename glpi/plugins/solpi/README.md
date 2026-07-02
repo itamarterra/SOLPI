@@ -24,6 +24,7 @@ Adjust your deployment to set these env vars (systemd, container, or CI secret m
 - [SOLPI 90 Days Plan](docs/SOLPI-90-Dias-Plano.md)
 - [SOLPI Fase 1 Weekly Plan](docs/SOLPI-Fase-1-Plano-Semanal.md)
 - [SOLPI Prioritized Improvements Checklist](docs/SOLPI-Melhorias-Prioritarias.md)
+- [SOLPI API Schemas](docs/SOLPI-API-Schemas.md)
 - [Integration Engine Architecture Blueprint](docs/SOLPI-IntegrationEngine-Architecture.md)
 - [Integration Engine README](src/Modules/IntegrationEngine/README.md)
 

@@ -17,7 +17,7 @@
 
 ## 4. Contratos de API
 - [x] Uniformizar respostas de ingestao direta, por adapter, checkpoints e worker.
-- [ ] Documentar schemas principais de entrada e saida.
+- [x] Documentar schemas principais de entrada e saida.
 - [ ] Revisar consistencia de nomes e metadados.
 
 ## 5. Conhecimento e IA
