@@ -20,6 +20,7 @@ Adjust your deployment to set these env vars (systemd, container, or CI secret m
 ## Project Vision
 
 - [SOLPI Enterprise Vision and Roadmap](docs/SOLPI-Enterprise-Vision-Roadmap.md)
+- [SOLPI Technical Roadmap](docs/SOLPI-Technical-Roadmap.md)
 - [Integration Engine Architecture Blueprint](docs/SOLPI-IntegrationEngine-Architecture.md)
 - [Integration Engine README](src/Modules/IntegrationEngine/README.md)
 
