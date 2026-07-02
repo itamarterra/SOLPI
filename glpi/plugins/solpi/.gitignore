@@ -1,0 +1,34 @@
+# Generated reports and analysis outputs
+phpstan-report.txt
+phpstan-report-utf8.txt
+PROJECT_TREE.txt
+PROJECT_DEPENDENCIES.csv
+PROJECT_FILES.csv
+PROJECT_CLASSES.csv
+EMPTY_FILES.csv
+audit_top_50_issues.csv
+
+# Logs
+migration.log
+*.log
+logs/
+
+# Vendor and dependencies
+/vendor/
+composer.lock
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment variables
+.env
+.env.local
+
+# OS specific
+Thumbs.db
+.DS_Store
