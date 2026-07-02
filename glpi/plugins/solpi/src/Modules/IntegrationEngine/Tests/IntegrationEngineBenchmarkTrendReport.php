@@ -50,7 +50,21 @@ $latest = $entries[array_key_last($entries)];
 $previous = count($entries) > 1 ? $entries[count($entries) - 2] : null;
 
 $latestRows = normalizeRows(is_array($latest['rows'] ?? null) ? $latest['rows'] : []);
-$previousRows = normalizeRows(is_array($previous['rows'] ?? null) ? $previous['rows'] : []);
+
+$referenceBySize = [];
+for ($i = count($entries) - 2; $i >= 0; $i--) {
+    $entry = $entries[$i];
+    $entryRows = normalizeRows(is_array($entry['rows'] ?? null) ? $entry['rows'] : []);
+
+    foreach ($entryRows as $size => $row) {
+        if (!isset($referenceBySize[$size])) {
+            $referenceBySize[$size] = [
+                'recorded_at' => (string)($entry['recorded_at'] ?? ''),
+                'row' => $row,
+            ];
+        }
+    }
+}
 
 $recordSizes = array_keys($latestRows);
 sort($recordSizes);
@@ -74,7 +88,9 @@ $regressionSizes = [];
 $rowsOutput = [];
 foreach ($recordSizes as $size) {
     $latestRow = $latestRows[$size];
-    $prevRow = $previousRows[$size] ?? null;
+    $reference = $referenceBySize[$size] ?? null;
+    $prevRow = is_array($reference['row'] ?? null) ? $reference['row'] : null;
+    $referenceRecordedAt = (string)($reference['recorded_at'] ?? '');
 
     $latestTp = (float)($latestRow['throughput_records_per_sec'] ?? 0.0);
     $prevTp = $prevRow !== null ? (float)($prevRow['throughput_records_per_sec'] ?? 0.0) : 0.0;
@@ -112,6 +128,7 @@ foreach ($recordSizes as $size) {
         'records' => $size,
         'latest_throughput' => $latestTp,
         'previous_throughput' => $prevRow !== null ? $prevTp : null,
+        'previous_recorded_at' => $prevRow !== null ? $referenceRecordedAt : null,
         'delta_abs' => $deltaAbs,
         'delta_pct' => $deltaPct,
         'latest_total_seconds' => $latestTotal,
@@ -143,6 +160,7 @@ if ($thresholdPct > 0.0) {
 echo json_encode([
     'latest_recorded_at' => $latest['recorded_at'] ?? null,
     'previous_recorded_at' => $previous['recorded_at'] ?? null,
+    'reference_mode' => 'latest_available_in_window',
     'sizes' => $recordSizes,
     'rows' => $rowsOutput,
     'mean_delta_throughput_abs' => $meanDelta,

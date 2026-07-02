@@ -315,6 +315,7 @@ Saida esperada:
 - Tabela com `latest_throughput`, `prev_throughput`, `delta_abs`, `delta_pct` por volume.
 - Indicador agregado `mean_delta_throughput_abs`.
 - Com `--threshold-pct`, retorna erro (exit code 3) quando algum volume cai alem do limite percentual.
+- A comparacao por volume usa a ultima referencia disponivel dentro da janela `--last`.
 
 ## 21) Fluxo diario em comando unico
 
