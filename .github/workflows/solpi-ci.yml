@@ -36,3 +36,7 @@ jobs:
           php -l src/Modules/IntegrationEngine/Services/IntegrationSummaryService.php
           php -l src/Modules/IntegrationEngine/Services/IntegrationSummaryCalculator.php
           php -l src/Modules/IntegrationEngine/Tests/IntegrationSummaryCalculatorSmoke.php
+
+      - name: SQL adapter smoke
+        working-directory: glpi/plugins/solpi
+        run: php src/Modules/IntegrationEngine/Tests/SqlAdapterSmoke.php

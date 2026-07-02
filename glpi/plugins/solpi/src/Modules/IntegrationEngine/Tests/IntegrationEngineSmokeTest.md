@@ -166,6 +166,16 @@ Resultado esperado:
 
 - `IntegrationSummaryCalculatorSmoke OK`
 
+## 12) SQL adapter local
+
+Execute o self-check local:
+
+- `php src/Modules/IntegrationEngine/Tests/SqlAdapterSmoke.php`
+
+Resultado esperado:
+
+- `SqlAdapterSmoke OK`
+
 Consulta checkpoint salvo:
 - GET /integration-engine/checkpoints?source=erp_sql&adapter=sql&name=companies_sync
 
