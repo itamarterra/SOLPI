@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * Uso:
  *   php src/Modules/IntegrationEngine/Tests/IntegrationEngineSmokeRunner.php \
- *     --base-url="http://localhost/glpi/plugins/solpi/api/index.php" \
+ *     --base-url="http://localhost:8081/solpi/index.php" \
  *     --api-key="SEU_SEGREDO"
  */
 
@@ -191,9 +191,9 @@ $steps = [
         'path' => '/integration-engine/jobs?limit=10',
         'body' => ['apikey' => $apiKey],
         'expect' => static function (array $response): array {
-            $items = $response['data']['items']['items'] ?? null;
+            $items = $response['data']['items'] ?? null;
             if (!is_array($items)) {
-                return [false, 'expected jobs.items.items array'];
+                return [false, 'expected jobs.items array'];
             }
 
             return [true, ''];
@@ -272,14 +272,24 @@ function request(string $baseUrl, string $path, string $method, array $body): ar
 
     $url = rtrim($baseUrl, '/') . $path;
     $ch = curl_init($url);
+    $headers = ['Content-Type: application/json'];
+
+    $apiKey = (string)($body['apikey'] ?? $body['api_key'] ?? '');
+    if ($apiKey !== '') {
+        $headers[] = 'X-API-Key: ' . $apiKey;
+    }
+
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, strtoupper($method));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
     if (strtoupper($method) === 'GET') {
         if ($body !== []) {
-            $query = http_build_query($body);
+            $queryBody = $body;
+            unset($queryBody['apikey'], $queryBody['api_key']);
+
+            $query = http_build_query($queryBody);
             if ($query !== '') {
                 curl_setopt($ch, CURLOPT_URL, $url . (str_contains($url, '?') ? '&' : '?') . $query);
             }

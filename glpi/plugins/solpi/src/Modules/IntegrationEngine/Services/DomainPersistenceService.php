@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace SOLPI\Modules\IntegrationEngine\Services;
 
-use DBmysql;
 use RuntimeException;
 use SOLPI\Modules\IntegrationEngine\Repositories\AssetRecordRepository;
 use SOLPI\Modules\IntegrationEngine\Repositories\CompanyRecordRepository;
@@ -12,7 +11,7 @@ use SOLPI\Modules\IntegrationEngine\Repositories\UserRecordRepository;
 
 final class DomainPersistenceService
 {
-    private DBmysql $db;
+    private object $db;
     private CompanyRecordRepository $companies;
     private UserRecordRepository $users;
     private AssetRecordRepository $assets;
@@ -20,7 +19,7 @@ final class DomainPersistenceService
     public function __construct()
     {
         global $DB;
-        if (!$DB instanceof DBmysql) {
+        if (!is_object($DB)) {
             throw new RuntimeException('Conexao com o banco do GLPI nao encontrada.');
         }
 
@@ -36,22 +35,11 @@ final class DomainPersistenceService
      */
     public function persist(string $entityType, array $record): array
     {
-        $this->db->query('START TRANSACTION');
-
-        try {
-            $result = match ($entityType) {
-                'company' => $this->companies->upsert($record),
-                'user' => $this->users->upsert($record),
-                'asset' => $this->assets->upsert($record),
-                default => throw new RuntimeException('Unsupported entity_type for persistence: ' . $entityType),
-            };
-
-            $this->db->query('COMMIT');
-
-            return $result;
-        } catch (\Throwable $e) {
-            $this->db->query('ROLLBACK');
-            throw $e;
-        }
+        return match ($entityType) {
+            'company' => $this->companies->upsert($record),
+            'user' => $this->users->upsert($record),
+            'asset' => $this->assets->upsert($record),
+            default => throw new RuntimeException('Unsupported entity_type for persistence: ' . $entityType),
+        };
     }
 }

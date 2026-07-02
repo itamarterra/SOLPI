@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace SOLPI\Modules\IntegrationEngine\Services;
 
-use DBmysql;
 use RuntimeException;
 
 final class IntegrationSummaryService
 {
-    private DBmysql $db;
+    private object $db;
     private GovernanceService $governance;
     private QueueService $queue;
     private IntegrationSummaryCalculator $calculator;
@@ -18,7 +17,7 @@ final class IntegrationSummaryService
     {
         global $DB;
 
-        if (!$DB instanceof DBmysql) {
+        if (!is_object($DB)) {
             throw new RuntimeException('Conexao com o banco do GLPI nao encontrada.');
         }
 

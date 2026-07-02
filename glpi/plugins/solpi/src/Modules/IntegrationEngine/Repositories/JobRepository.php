@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace SOLPI\Modules\IntegrationEngine\Repositories;
 
-use DBmysql;
 use JsonException;
 use RuntimeException;
 use SOLPI\Modules\IntegrationEngine\Queue\QueueConsumerInterface;
@@ -12,13 +11,13 @@ use SOLPI\Modules\IntegrationEngine\Queue\QueueProducerInterface;
 
 final class JobRepository implements QueueProducerInterface, QueueConsumerInterface
 {
-    private DBmysql $db;
+    private object $db;
 
     public function __construct()
     {
         global $DB;
 
-        if (!$DB instanceof DBmysql) {
+        if (!is_object($DB)) {
             throw new RuntimeException('Conexao com o banco do GLPI nao encontrada.');
         }
 
@@ -50,30 +49,20 @@ final class JobRepository implements QueueProducerInterface, QueueConsumerInterf
             return [];
         }
 
-        $this->db->query('START TRANSACTION');
         $ids = [];
 
-        try {
-            foreach ($jobs as $job) {
-                $this->db->insert('glpi_plugin_solpi_jobs', [
-                    'name' => (string)$job['name'],
-                    'handler' => (string)$job['handler'],
-                    'payload' => $this->encodePayload($job['payload']),
-                    'status' => 'PENDING',
-                    'attempts' => 0,
-                    'max_attempts' => max(1, (int)($job['max_attempts'] ?? 5)),
-                    'scheduled_at' => date('Y-m-d H:i:s'),
-                ]);
+        foreach ($jobs as $job) {
+            $this->db->insert('glpi_plugin_solpi_jobs', [
+                'name' => (string)$job['name'],
+                'handler' => (string)$job['handler'],
+                'payload' => $this->encodePayload($job['payload']),
+                'status' => 'PENDING',
+                'attempts' => 0,
+                'max_attempts' => max(1, (int)($job['max_attempts'] ?? 5)),
+                'scheduled_at' => date('Y-m-d H:i:s'),
+            ]);
 
-                $ids[] = (int)$this->db->insertId();
-            }
-
-            $this->db->query('COMMIT');
-        } catch (
-            \Throwable $e
-        ) {
-            $this->db->query('ROLLBACK');
-            throw $e;
+            $ids[] = (int)$this->db->insertId();
         }
 
         return $ids;
@@ -100,11 +89,24 @@ final class JobRepository implements QueueProducerInterface, QueueConsumerInterf
 
     public function markRunning(int $jobId): void
     {
-        $this->db->query(
-            'UPDATE glpi_plugin_solpi_jobs '
-            . 'SET status = "RUNNING", started_at = NOW(), attempts = attempts + 1 '
-            . 'WHERE id = ' . $jobId
-        );
+        $attempts = 0;
+
+        foreach ($this->db->request([
+            'SELECT' => ['attempts'],
+            'FROM' => 'glpi_plugin_solpi_jobs',
+            'WHERE' => ['id' => $jobId],
+            'LIMIT' => 1,
+        ]) as $row) {
+            $attempts = (int)($row['attempts'] ?? 0);
+        }
+
+        $this->db->update('glpi_plugin_solpi_jobs', [
+            'status' => 'RUNNING',
+            'started_at' => date('Y-m-d H:i:s'),
+            'attempts' => $attempts + 1,
+        ], [
+            'id' => $jobId,
+        ]);
     }
 
     public function markSuccess(int $jobId): void
@@ -121,14 +123,26 @@ final class JobRepository implements QueueProducerInterface, QueueConsumerInterf
     public function markFailed(int $jobId, string $error): void
     {
         $safeError = mb_substr($error, 0, 6000);
+        $attempts = 0;
+        $maxAttempts = 0;
 
-        $this->db->query(
-            'UPDATE glpi_plugin_solpi_jobs '
-            . 'SET status = CASE WHEN attempts >= max_attempts THEN "DEAD" ELSE "PENDING" END, '
-            . 'error = "' . $this->db->escape($safeError) . '", '
-            . 'finished_at = NOW() '
-            . 'WHERE id = ' . $jobId
-        );
+        foreach ($this->db->request([
+            'SELECT' => ['attempts', 'max_attempts'],
+            'FROM' => 'glpi_plugin_solpi_jobs',
+            'WHERE' => ['id' => $jobId],
+            'LIMIT' => 1,
+        ]) as $row) {
+            $attempts = (int)($row['attempts'] ?? 0);
+            $maxAttempts = (int)($row['max_attempts'] ?? 0);
+        }
+
+        $this->db->update('glpi_plugin_solpi_jobs', [
+            'status' => $attempts >= max(1, $maxAttempts) ? 'DEAD' : 'PENDING',
+            'error' => $safeError,
+            'finished_at' => date('Y-m-d H:i:s'),
+        ], [
+            'id' => $jobId,
+        ]);
     }
 
     /**

@@ -31,3 +31,12 @@ if (!is_file($autoload)) {
 require_once $autoload;
 
 SOLPI\Core\Bootstrap::initialize();
+
+// GLPI recentes podem nao expor $DB global automaticamente em todos os entrypoints.
+if ((!isset($GLOBALS['DB']) || !is_object($GLOBALS['DB'])) && class_exists('DBConnection')) {
+    try {
+        $GLOBALS['DB'] = DBConnection::getReadConnection();
+    } catch (Throwable $e) {
+        // Mantem comportamento atual; os repositorios retornarao erro claro se DB seguir indisponivel.
+    }
+}

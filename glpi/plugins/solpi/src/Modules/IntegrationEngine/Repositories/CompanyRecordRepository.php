@@ -4,17 +4,16 @@ declare(strict_types=1);
 
 namespace SOLPI\Modules\IntegrationEngine\Repositories;
 
-use DBmysql;
 use RuntimeException;
 
 final class CompanyRecordRepository
 {
-    private DBmysql $db;
+    private object $db;
 
     public function __construct()
     {
         global $DB;
-        if (!$DB instanceof DBmysql) {
+        if (!is_object($DB)) {
             throw new RuntimeException('Conexao com o banco do GLPI nao encontrada.');
         }
         $this->db = $DB;

@@ -2,16 +2,55 @@
 
 declare(strict_types=1);
 
-define('GLPI_ROOT', dirname(__DIR__, 3) . DIRECTORY_SEPARATOR);
+$glpiRoot = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR;
 
-if (!is_file(GLPI_ROOT . 'inc/includes.php')) {
+if (!is_file($glpiRoot . 'inc/includes.php')) {
 	http_response_code(500);
 	header('Content-Type: application/json; charset=utf-8');
 	echo json_encode(['error' => 'GLPI bootstrap not found']);
 	exit;
 }
 
-require_once GLPI_ROOT . 'inc/includes.php';
+// Compatibilidade com GLPI 11+: inicializa autoload e conexao DB global.
+$autoload = $glpiRoot . 'vendor/autoload.php';
+if (is_file($autoload)) {
+	require_once $autoload;
+}
+
+if (!defined('GLPI_ROOT')) {
+	define('GLPI_ROOT', $glpiRoot);
+}
+
+$glpiRootPath = rtrim((string)GLPI_ROOT, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+
+if (!defined('GLPI_CONFIG_DIR')) {
+	$configCandidates = [
+		'/var/glpi/config',
+		$glpiRootPath . 'config',
+	];
+
+	foreach ($configCandidates as $candidate) {
+		if (is_dir($candidate)) {
+			define('GLPI_CONFIG_DIR', rtrim($candidate, DIRECTORY_SEPARATOR));
+			break;
+		}
+	}
+}
+
+if (class_exists('DBConnection')) {
+	$configDir = defined('GLPI_CONFIG_DIR') ? GLPI_CONFIG_DIR : ($glpiRootPath . 'config' . DIRECTORY_SEPARATOR);
+	$configDb = rtrim((string)$configDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'config_db.php';
+
+	if (is_file($configDb)) {
+		include_once $configDb;
+
+		if (class_exists('DB', false)) {
+			DBConnection::establishDBConnection(false, false);
+		}
+	}
+}
+
+require_once $glpiRootPath . 'inc/includes.php';
 require_once __DIR__ . '/../inc/bootstrap.php';
 require_once __DIR__ . '/middleware.php';
 require_once __DIR__ . '/routes.php';

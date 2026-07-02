@@ -4,11 +4,14 @@
 - API ativa em /glpi/plugins/solpi/api/index.php
 - Segredo configurado em SOLPI_WEBHOOK_SECRET (ou evolution.auth_key)
 
+Base URL recomendada no ambiente docker deste repositorio:
+- http://localhost:8081/solpi/index.php
+
 ## Runner automatizado (recomendado)
 
 Execute o script unico com validacao de respostas esperadas:
 
-- `php src/Modules/IntegrationEngine/Tests/IntegrationEngineSmokeRunner.php --base-url="http://localhost/glpi/plugins/solpi/api/index.php" --api-key="SEU_SEGREDO"`
+- `php src/Modules/IntegrationEngine/Tests/IntegrationEngineSmokeRunner.php --base-url="http://localhost:8081/solpi/index.php" --api-key="SEU_SEGREDO"`
 
 Fluxo coberto pelo runner:
 - GET /integration-engine/adapters

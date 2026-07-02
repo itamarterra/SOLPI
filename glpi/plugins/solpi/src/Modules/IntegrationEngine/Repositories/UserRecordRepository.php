@@ -4,17 +4,16 @@ declare(strict_types=1);
 
 namespace SOLPI\Modules\IntegrationEngine\Repositories;
 
-use DBmysql;
 use RuntimeException;
 
 final class UserRecordRepository
 {
-    private DBmysql $db;
+    private object $db;
 
     public function __construct()
     {
         global $DB;
-        if (!$DB instanceof DBmysql) {
+        if (!is_object($DB)) {
             throw new RuntimeException('Conexao com o banco do GLPI nao encontrada.');
         }
         $this->db = $DB;
@@ -89,13 +88,16 @@ final class UserRecordRepository
     {
         if (isset($where['settings'])) {
             $pattern = (string)$where['settings'];
-            $sql = 'SELECT * FROM glpi_plugin_solpi_users WHERE settings LIKE "' . $this->db->escape($pattern) . '" LIMIT 1';
-            $iterator = $this->db->query($sql);
-            if ($iterator) {
-                while ($row = $iterator->next()) {
-                    return $row;
-                }
+            foreach ($this->db->request([
+                'FROM' => 'glpi_plugin_solpi_users',
+                'WHERE' => [
+                    'settings' => ['LIKE', $pattern],
+                ],
+                'LIMIT' => 1,
+            ]) as $row) {
+                return $row;
             }
+
             return null;
         }
 

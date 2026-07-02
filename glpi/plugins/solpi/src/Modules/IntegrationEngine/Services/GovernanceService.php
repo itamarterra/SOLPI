@@ -4,19 +4,18 @@ declare(strict_types=1);
 
 namespace SOLPI\Modules\IntegrationEngine\Services;
 
-use DBmysql;
 use RuntimeException;
 use SOLPI\Modules\IntegrationEngine\Repositories\DataQualityReportRepository;
 
 final class GovernanceService
 {
-    private DBmysql $db;
+    private object $db;
     private DataQualityReportRepository $qualityReports;
 
     public function __construct()
     {
         global $DB;
-        if (!$DB instanceof DBmysql) {
+        if (!is_object($DB)) {
             throw new RuntimeException('Conexao com o banco do GLPI nao encontrada.');
         }
 
@@ -103,8 +102,10 @@ final class GovernanceService
 
     private function deleteOlderThan(string $table, int $days): int
     {
-        $sql = 'DELETE FROM ' . $table . ' WHERE created_at < DATE_SUB(NOW(), INTERVAL ' . (int)$days . ' DAY)';
-        $this->db->query($sql);
+        $threshold = date('Y-m-d H:i:s', time() - ($days * 86400));
+        $this->db->delete($table, [
+            'created_at' => ['<', $threshold],
+        ]);
 
         if (method_exists($this->db, 'affectedRows')) {
             return (int)$this->db->affectedRows();
