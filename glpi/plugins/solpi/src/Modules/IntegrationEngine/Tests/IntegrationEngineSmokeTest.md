@@ -309,21 +309,25 @@ Gerar relatorio comparando a ultima execucao com a anterior:
 Opcional (janela customizada):
 
 - `php src/Modules/IntegrationEngine/Tests/IntegrationEngineBenchmarkTrendReport.php --last=7`
+- `php src/Modules/IntegrationEngine/Tests/IntegrationEngineBenchmarkTrendReport.php --last=7 --threshold-pct=10`
 
 Saida esperada:
 - Tabela com `latest_throughput`, `prev_throughput`, `delta_abs`, `delta_pct` por volume.
 - Indicador agregado `mean_delta_throughput_abs`.
+- Com `--threshold-pct`, retorna erro (exit code 3) quando algum volume cai alem do limite percentual.
 
 ## 21) Fluxo diario em comando unico
 
 Executa baseline historico e relatorio de tendencia em sequencia:
 
 - `php src/Modules/IntegrationEngine/Tests/IntegrationEngineBenchmarkDailyRunner.php --base-url="http://localhost:8081/solpi/index.php" --api-key="SEU_SEGREDO" --sizes="250,500,1000,2000" --batch-size=250 --worker-limit=300 --last=7`
+- `php src/Modules/IntegrationEngine/Tests/IntegrationEngineBenchmarkDailyRunner.php --base-url="http://localhost:8081/solpi/index.php" --api-key="SEU_SEGREDO" --sizes="250,500,1000,2000" --batch-size=250 --worker-limit=300 --last=7 --threshold-pct=10`
 
 Saida esperada:
 - Bloco de benchmark comparativo.
 - Gravacao no historico JSONL.
 - Relatorio latest vs previous ao final.
+- Opcionalmente falha com alerta de regressao quando o threshold percentual for ultrapassado.
 
 Todos aceitam envelope:
 {

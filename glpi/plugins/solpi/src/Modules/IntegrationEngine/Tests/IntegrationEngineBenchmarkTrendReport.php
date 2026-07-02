@@ -8,14 +8,16 @@ declare(strict_types=1);
  * Uso:
  *   php src/Modules/IntegrationEngine/Tests/IntegrationEngineBenchmarkTrendReport.php
  *   php src/Modules/IntegrationEngine/Tests/IntegrationEngineBenchmarkTrendReport.php --history-file="logs/integration_engine_benchmark_history.jsonl" --last=7
+ *   php src/Modules/IntegrationEngine/Tests/IntegrationEngineBenchmarkTrendReport.php --threshold-pct=10
  */
 
-$options = getopt('', ['history-file::', 'last::']);
+$options = getopt('', ['history-file::', 'last::', 'threshold-pct::']);
 
 $pluginRoot = dirname(__DIR__, 4);
 $defaultHistoryFile = $pluginRoot . '/logs/integration_engine_benchmark_history.jsonl';
 $historyFile = (string)($options['history-file'] ?? $defaultHistoryFile);
 $last = max(2, (int)($options['last'] ?? 10));
+$thresholdPct = max(0.0, (float)($options['threshold-pct'] ?? 0.0));
 
 if (!is_file($historyFile)) {
     fwrite(STDERR, 'History file not found: ' . $historyFile . PHP_EOL);
@@ -66,6 +68,10 @@ echo '| records | latest_throughput | prev_throughput | delta_abs | delta_pct | 
 echo '|---:|---:|---:|---:|---:|---:|---:|' . PHP_EOL;
 
 $deltas = [];
+$deltasPct = [];
+$regressionDetected = false;
+$regressionSizes = [];
+$rowsOutput = [];
 foreach ($recordSizes as $size) {
     $latestRow = $latestRows[$size];
     $prevRow = $previousRows[$size] ?? null;
@@ -93,19 +99,62 @@ foreach ($recordSizes as $size) {
     if ($deltaAbs !== null) {
         $deltas[] = $deltaAbs;
     }
+
+    if ($deltaPct !== null) {
+        $deltasPct[] = $deltaPct;
+        if ($thresholdPct > 0.0 && $deltaPct <= (-1.0 * $thresholdPct)) {
+            $regressionDetected = true;
+            $regressionSizes[] = $size;
+        }
+    }
+
+    $rowsOutput[] = [
+        'records' => $size,
+        'latest_throughput' => $latestTp,
+        'previous_throughput' => $prevRow !== null ? $prevTp : null,
+        'delta_abs' => $deltaAbs,
+        'delta_pct' => $deltaPct,
+        'latest_total_seconds' => $latestTotal,
+        'previous_total_seconds' => $prevTotal,
+    ];
 }
 
 echo PHP_EOL;
+$meanDelta = null;
 if ($deltas !== []) {
     $meanDelta = array_sum($deltas) / count($deltas);
     echo 'mean_delta_throughput_abs: ' . formatFloat($meanDelta) . ' rec/s' . PHP_EOL;
+}
+
+$meanDeltaPct = null;
+if ($deltasPct !== []) {
+    $meanDeltaPct = array_sum($deltasPct) / count($deltasPct);
+    echo 'mean_delta_throughput_pct: ' . formatNullablePercent($meanDeltaPct, true) . PHP_EOL;
+}
+
+if ($thresholdPct > 0.0) {
+    echo 'threshold_pct: ' . formatNullablePercent($thresholdPct, true) . PHP_EOL;
+    echo 'regression_detected: ' . ($regressionDetected ? 'true' : 'false') . PHP_EOL;
+    if ($regressionDetected) {
+        echo 'regression_sizes: ' . implode(',', $regressionSizes) . PHP_EOL;
+    }
 }
 
 echo json_encode([
     'latest_recorded_at' => $latest['recorded_at'] ?? null,
     'previous_recorded_at' => $previous['recorded_at'] ?? null,
     'sizes' => $recordSizes,
+    'rows' => $rowsOutput,
+    'mean_delta_throughput_abs' => $meanDelta,
+    'mean_delta_throughput_pct' => $meanDeltaPct,
+    'threshold_pct' => $thresholdPct,
+    'regression_detected' => $regressionDetected,
+    'regression_sizes' => $regressionSizes,
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . PHP_EOL;
+
+if ($thresholdPct > 0.0 && $regressionDetected) {
+    exit(3);
+}
 
 exit(0);
 

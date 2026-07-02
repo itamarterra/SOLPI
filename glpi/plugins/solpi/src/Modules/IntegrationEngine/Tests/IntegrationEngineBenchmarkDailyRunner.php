@@ -12,7 +12,8 @@ declare(strict_types=1);
  *     --sizes="250,500,1000,2000" \
  *     --batch-size=250 \
  *     --worker-limit=300 \
- *     --last=7
+ *     --last=7 \
+ *     --threshold-pct=10
  */
 
 $options = getopt('', [
@@ -23,6 +24,7 @@ $options = getopt('', [
     'worker-limit::',
     'history-file::',
     'last::',
+    'threshold-pct::',
 ]);
 
 $baseUrl = (string)($options['base-url'] ?? '');
@@ -31,6 +33,7 @@ $sizes = (string)($options['sizes'] ?? '250,500,1000,2000');
 $batchSize = max(1, min(1000, (int)($options['batch-size'] ?? 250)));
 $workerLimit = max(1, min(2000, (int)($options['worker-limit'] ?? 300)));
 $last = max(2, (int)($options['last'] ?? 7));
+$thresholdPct = max(0.0, (float)($options['threshold-pct'] ?? 0.0));
 
 $pluginRoot = dirname(__DIR__, 4);
 $defaultHistoryFile = $pluginRoot . '/logs/integration_engine_benchmark_history.jsonl';
@@ -77,6 +80,7 @@ $trendExit = runCommand([
     escapeshellarg($trendRunner),
     '--history-file=' . escapeshellarg($historyFile),
     '--last=' . (string)$last,
+    '--threshold-pct=' . (string)$thresholdPct,
 ]);
 
 if ($trendExit !== 0) {
