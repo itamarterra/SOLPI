@@ -5,31 +5,31 @@ Objetivo: transformar o contexto de lote em algo auditavel, observavel e util pa
 ## Checklist tecnico
 
 ### 1. Estruturar o contexto de lote no payload
-- [ ] Garantir que `_queue_meta` esteja presente em todo job gerado por ingestao por adapter.
-- [ ] Confirmar que `_queue_meta` carregue `adapter`, `source`, `event`, `batch_size`, `batch_count`, `batch_index` e `job_index`.
-- [ ] Confirmar que `_queue_meta` carregue `records_total`, `records_queued`, `records_duplicate` e `truncated`.
-- [ ] Preservar `checkpoint_enabled`, `checkpoint_name`, `checkpoint_in` e `checkpoint_out` quando checkpoint estiver ativo.
+- [x] Garantir que `_queue_meta` esteja presente em todo job gerado por ingestao por adapter.
+- [x] Confirmar que `_queue_meta` carregue `adapter`, `source`, `event`, `batch_size`, `batch_count`, `batch_index` e `job_index`.
+- [x] Confirmar que `_queue_meta` carregue `records_total`, `records_queued`, `records_duplicate` e `truncated`.
+- [x] Preservar `checkpoint_enabled`, `checkpoint_name`, `checkpoint_in` e `checkpoint_out` quando checkpoint estiver ativo.
 
 ### 2. Registrar contexto no worker
-- [ ] Ler `_queue_meta` no worker antes do processamento do payload canonico.
-- [ ] Incluir `batch_index`, `batch_count`, `batch_size` e `batch_jobs_in_chunk` na auditoria de sucesso.
-- [ ] Incluir `batch_index` e `batch_count` na auditoria de erro.
-- [ ] Garantir que o worker continue processando mesmo quando `_queue_meta` estiver ausente.
+- [x] Ler `_queue_meta` no worker antes do processamento do payload canonico.
+- [x] Incluir `batch_index`, `batch_count`, `batch_size` e `batch_jobs_in_chunk` na auditoria de sucesso.
+- [x] Incluir `batch_index` e `batch_count` na auditoria de erro.
+- [x] Garantir que o worker continue processando mesmo quando `_queue_meta` estiver ausente.
 
 ### 3. Consolidar persistencia da fila
-- [ ] Validar que `enqueueBatch()` persista cada job com payload JSON valido.
-- [ ] Garantir que lote vazio retorne array vazio sem escrita no banco.
-- [ ] Confirmar que IDs retornados correspondam aos jobs inseridos.
+- [x] Validar que `enqueueBatch()` persista cada job com payload JSON valido.
+- [x] Garantir que lote vazio retorne array vazio sem escrita no banco.
+- [x] Confirmar que IDs retornados correspondam aos jobs inseridos.
 
 ### 4. Documentar comportamento operacional
-- [ ] Explicar o papel de `_queue_meta` no README do IntegrationEngine.
-- [ ] Atualizar exemplos de API para mostrar o contexto de lote.
-- [ ] Registrar como interpretar lotes, duplicados e truncamento.
+- [x] Explicar o papel de `_queue_meta` no README do IntegrationEngine.
+- [x] Atualizar exemplos de API para mostrar o contexto de lote.
+- [x] Registrar como interpretar lotes, duplicados e truncamento.
 
 ### 5. Validar com smoke
-- [ ] Adicionar um caso de smoke para ingestao em lote.
-- [ ] Simular um lote truncado e confirmar metricas.
-- [ ] Simular um job com checkpoint e validar o contexto final no log.
+- [x] Adicionar um caso de smoke para ingestao em lote.
+- [x] Simular um lote truncado e confirmar metricas.
+- [x] Simular um job com checkpoint e validar o contexto final no log.
 
 ## Arquivos principais
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SOLPI\Modules\IntegrationEngine\Repositories;
 
 use DBmysql;
+use JsonException;
 use RuntimeException;
 use SOLPI\Modules\IntegrationEngine\Queue\QueueConsumerInterface;
 use SOLPI\Modules\IntegrationEngine\Queue\QueueProducerInterface;
@@ -29,7 +30,7 @@ final class JobRepository implements QueueProducerInterface, QueueConsumerInterf
         $this->db->insert('glpi_plugin_solpi_jobs', [
             'name' => $name,
             'handler' => $handler,
-            'payload' => json_encode($payload, JSON_UNESCAPED_UNICODE),
+            'payload' => $this->encodePayload($payload),
             'status' => 'PENDING',
             'attempts' => 0,
             'max_attempts' => max(1, $maxAttempts),
@@ -57,7 +58,7 @@ final class JobRepository implements QueueProducerInterface, QueueConsumerInterf
                 $this->db->insert('glpi_plugin_solpi_jobs', [
                     'name' => (string)$job['name'],
                     'handler' => (string)$job['handler'],
-                    'payload' => json_encode($job['payload'], JSON_UNESCAPED_UNICODE),
+                    'payload' => $this->encodePayload($job['payload']),
                     'status' => 'PENDING',
                     'attempts' => 0,
                     'max_attempts' => max(1, (int)($job['max_attempts'] ?? 5)),
@@ -175,5 +176,17 @@ final class JobRepository implements QueueProducerInterface, QueueConsumerInterf
             'started_at' => $row['started_at'] ?? null,
             'finished_at' => $row['finished_at'] ?? null,
         ];
+    }
+
+    /**
+     * @param array<string,mixed> $payload
+     */
+    private function encodePayload(array $payload): string
+    {
+        try {
+            return json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            throw new RuntimeException('Falha ao serializar payload do job para JSON: ' . $e->getMessage(), 0, $e);
+        }
     }
 }

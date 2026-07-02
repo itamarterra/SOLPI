@@ -3,11 +3,11 @@
 ## 1. Ambiente e compatibilidade
 - [x] Expor claramente o requisito minimo de PHP 8.3.
 - [x] Adicionar checagem de ambiente/CI para falhar cedo quando a versao estiver abaixo do minimo.
-- [ ] Garantir que a documentacao principal destaque o requisito de runtime.
+- [x] Garantir que a documentacao principal destaque o requisito de runtime.
 
 ## 2. Cobertura automatizada
-- [ ] Expandir testes para lote, checkpoints, paginacao e truncamento.
-- [ ] Criar validacoes para REST e SOAP.
+- [x] Expandir testes para lote, checkpoints, paginacao e truncamento.
+- [x] Criar validacoes para REST e SOAP.
 - [x] Criar validacoes para SQL, CSV e XML.
 - [x] Cobrir caminho de paginacao e incremental do SQL adapter.
 - [x] Cobrir caminho de paginacao e offset do CSV adapter.

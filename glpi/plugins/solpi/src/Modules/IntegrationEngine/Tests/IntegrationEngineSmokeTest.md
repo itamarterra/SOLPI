@@ -146,6 +146,18 @@ Campos esperados na resposta:
 - checkpoint_out
 - checkpoint_saved
 
+## 9.1) Truncamento + checkpoint (json adapter)
+
+Use um payload com mais de um registro e force max_records=1.
+
+Campos esperados na resposta:
+- truncated=true
+- records_total=1
+- records_duplicate >= 0
+- checkpoint_enabled=true
+- checkpoint_name preenchido
+- checkpoint_out preenchido quando checkpoint_field for informado
+
 ## 10) Batch context local
 
 Execute o self-check local:
@@ -195,6 +207,16 @@ Execute o self-check local:
 Resultado esperado:
 
 - `WorkerFailureSmoke OK`
+
+## 15) REST e SOAP validations local
+
+Execute o self-check local:
+
+- `php src/Modules/IntegrationEngine/Tests/RestSoapAdapterSmoke.php`
+
+Resultado esperado:
+
+- `RestSoapAdapterSmoke OK`
 
 Consulta checkpoint salvo:
 - GET /integration-engine/checkpoints?source=erp_sql&adapter=sql&name=companies_sync

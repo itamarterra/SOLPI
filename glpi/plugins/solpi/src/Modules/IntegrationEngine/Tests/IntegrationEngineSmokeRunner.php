@@ -68,6 +68,41 @@ $steps = [
         ],
     ],
     [
+        'name' => 'ingest json truncated checkpoint',
+        'method' => 'POST',
+        'path' => '/integration-engine/ingest/adapter',
+        'body' => [
+            'apikey' => $apiKey,
+            'source' => 'smoke_runner_json_truncated',
+            'event' => 'upsert',
+            'adapter' => 'json',
+            'context' => [
+                'max_records' => 1,
+                'checkpoint' => [
+                    'enabled' => true,
+                    'name' => 'json_truncated_checkpoint',
+                ],
+            ],
+            'payload' => [
+                'checkpoint_field' => 'updated_at',
+                'data' => [
+                    [
+                        'entity_type' => 'user',
+                        'email' => 'runner.batch1@acme.test',
+                        'name' => 'Runner Batch 1',
+                        'updated_at' => '2026-07-02T12:00:00Z',
+                    ],
+                    [
+                        'entity_type' => 'user',
+                        'email' => 'runner.batch2@acme.test',
+                        'name' => 'Runner Batch 2',
+                        'updated_at' => '2026-07-02T12:05:00Z',
+                    ],
+                ],
+            ],
+        ],
+    ],
+    [
         'name' => 'run worker once',
         'method' => 'POST',
         'path' => '/integration-engine/worker/run-once',

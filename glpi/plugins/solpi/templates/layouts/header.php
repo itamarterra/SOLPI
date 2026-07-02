@@ -22,6 +22,7 @@ if (!defined('GLPI_ROOT')) {
                 <li class="nav-item"><a class="nav-link" href="index.php">Início</a></li>
                 <li class="nav-item"><a class="nav-link" href="dashboard.php">Dashboard</a></li>
                 <li class="nav-item"><a class="nav-link" href="tickets.php">Tickets</a></li>
+                <li class="nav-item"><a class="nav-link" href="/solpi-import.php" target="_blank" rel="noopener noreferrer">Janela de Importação SOLPI</a></li>
                 <li class="nav-item"><a class="nav-link" href="alerts.php">Alertas</a></li>
                 <li class="nav-item"><a class="nav-link" href="config.php">Config</a></li>
                 <li class="nav-item"><a class="nav-link" href="whatsapp.php">WhatsApp</a></li>
