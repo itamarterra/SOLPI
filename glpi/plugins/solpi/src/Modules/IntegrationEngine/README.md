@@ -41,6 +41,13 @@ Fase 5 implementada:
 - Smoke test atualizado em src/Modules/IntegrationEngine/Tests/IntegrationEngineSmokeTest.md.
 - Runner CLI de smoke em src/Modules/IntegrationEngine/Tests/IntegrationEngineSmokeRunner.php.
 
+Fase 6 em andamento:
+- Micro-batching configuravel por source e adapter.
+- Metadados de lote persistidos no payload enfileirado em _queue_meta.
+- batch_size, batch_count, batch_index e batch_jobs_in_chunk registrados no fluxo de auditoria do worker.
+- Stop conditions reforcadas para REST, SQL, CSV, XML e SOAP.
+- Melhor observabilidade para volumes truncados, paginas curtas e batches processados.
+
 Próximos passos (Fase 6):
 - Pipeline inicial de classificação implementado em Services/ClassificationService.php.
 - Endpoint operacional: POST /integration-engine/classify.

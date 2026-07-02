@@ -21,11 +21,14 @@ Deliverables:
 - Queue backpressure controls.
 - Batch-level checkpoints.
 - Better observability for batch duration, retry count, and truncated loads.
+- Queue metadata persisted with batch size, batch count, batch index, and chunk size.
+- Worker audit logs enriched with batch context for success and failure events.
 
 Acceptance criteria:
 - Large ingestions can run without excessive memory growth.
 - Pagination stops early when the source signals exhaustion.
 - Batch metrics are visible in job metadata and logs.
+- Batch context can be traced from API response to queued job to worker audit log.
 
 ## Phase 7 - Contextual Knowledge and Semantic Search
 
