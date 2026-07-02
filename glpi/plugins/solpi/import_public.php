@@ -472,7 +472,6 @@ if ($step === 'preview') {
     }
 }
 
-$glpiUrl = 'http://localhost:8081';
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -480,7 +479,7 @@ $glpiUrl = 'http://localhost:8081';
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Janela de Importação SOLPI</title>
-<link rel="stylesheet" href="<?=$glpiUrl?>/lib/base.min.css">
+<link rel="stylesheet" href="/lib/base.min.css">
 <style>
 body{padding:20px;background:#f4f6f9}
 .card{border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
@@ -492,7 +491,7 @@ body{padding:20px;background:#f4f6f9}
 <div class="container-fluid" style="max-width:1180px;margin:auto">
   <div class="d-flex align-items-center mb-4 gap-2">
     <h3 class="mb-0">📥 Janela de Importação SOLPI</h3>
-    <a href="<?=$glpiUrl?>/front/ticket.php" class="btn btn-sm btn-outline-secondary ms-auto">Ver Chamados no GLPI</a>
+    <a href="/front/ticket.php" class="btn btn-sm btn-outline-secondary ms-auto">Ver Chamados no GLPI</a>
   </div>
 
 <?php if ($message): ?>
@@ -503,7 +502,7 @@ body{padding:20px;background:#f4f6f9}
   <div class="card p-4 text-center">
     <h4>✅ Importação concluída!</h4>
     <a href="/solpi-import.php" class="btn btn-primary mt-3">Nova Importação</a>
-    <a href="<?=$glpiUrl?>/front/ticket.php" class="btn btn-success mt-3 ms-2">Ver Chamados no GLPI</a>
+    <a href="/front/ticket.php" class="btn btn-success mt-3 ms-2">Ver Chamados no GLPI</a>
   </div>
 
 <?php elseif ($step === 'preview' && $rows): ?>

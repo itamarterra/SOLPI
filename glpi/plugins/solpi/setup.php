@@ -60,16 +60,12 @@ function plugin_solpi_display_central(): void
         return;
     }
 
-    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host = (string)($_SERVER['HTTP_HOST'] ?? 'localhost');
-    $importUrl = $scheme . '://' . $host . '/solpi-import.php';
-
     echo '<tr>';
     echo '<td class="center" style="padding:12px;">';
     echo '<div style="max-width:980px;margin:0 auto;background:#f8fbff;border:1px solid #dbeafe;border-radius:10px;padding:14px 16px;">';
     echo '<div style="font-weight:700;margin-bottom:6px;">SOLPI</div>';
     echo '<div style="margin-bottom:10px;">Janela SOLPI para importar dados e gerar chamados automaticamente.</div>';
-    echo '<a class="btn btn-primary" target="_blank" rel="noopener noreferrer" href="' . htmlspecialchars($importUrl, ENT_QUOTES, 'UTF-8') . '">Abrir Janela SOLPI</a>';
+    echo '<a class="btn btn-primary" target="_blank" rel="noopener noreferrer" href="/solpi-import.php">Abrir Janela SOLPI</a>';
     echo '</div>';
     echo '</td>';
     echo '</tr>';
