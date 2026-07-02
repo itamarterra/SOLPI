@@ -3,16 +3,44 @@ declare(strict_types=1);
 
 namespace SOLPI\Modules\AI;
 
+use SOLPI\AI\AIKernel;
+use SOLPI\AI\AIRepository;
+
 final class AIService
 {
-    public function __call(string $method, array $arguments): mixed
+    private AIKernel $kernel;
+    private AIRepository $repository;
+
+    public function __construct()
     {
-        return null;
+        $this->kernel = new AIKernel();
+        $this->repository = new AIRepository();
     }
 
-    public function __get(string $name): mixed
+    /**
+     * @param array<string,mixed> $context
+     * @return array<string,mixed>
+     */
+    public function processQuery(string $query, array $context = []): array
     {
-        return null;
+        return $this->kernel->chat($query, $context);
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function getProviderStats(): array
+    {
+        return $this->repository->getProviderStats();
+    }
+
+    /**
+     * @param array<string,mixed> $config
+     * @return bool
+     */
+    public function updateConfiguration(array $config): bool
+    {
+        return $this->repository->saveConfiguration($config);
     }
 }
 
