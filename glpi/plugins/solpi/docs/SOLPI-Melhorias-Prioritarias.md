@@ -7,8 +7,11 @@
 
 ## 2. Cobertura automatizada
 - [ ] Expandir testes para lote, checkpoints, paginacao e truncamento.
-- [ ] Criar validacoes para REST, SQL, CSV, XML e SOAP.
+- [ ] Criar validacoes para REST e SOAP.
+- [x] Criar validacoes para SQL, CSV e XML.
 - [x] Cobrir caminho de paginacao e incremental do SQL adapter.
+- [x] Cobrir caminho de paginacao e offset do CSV adapter.
+- [x] Cobrir parsing e records_path do XML adapter.
 - [ ] Cobrir caminhos de erro do worker e da fila.
 
 ## 3. Observabilidade operacional

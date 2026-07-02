@@ -37,7 +37,7 @@ Fase 5 implementada:
 - Endpoint de resumo operacional: GET /integration-engine/summary.
 - O resumo operacional inclui jobs, batches, review queue, dead letter, checkpoints e quality snapshot.
 - REST adapter com paginação configurável (page/offset/cursor) e records_path para payloads aninhados.
-- Local smoke tests for batch metadata, API envelope, summary aggregation and SQL adapter pagination.
+- Local smoke tests for batch metadata, API envelope, summary aggregation, SQL adapter pagination, and CSV/XML adapter parsing.
 - Self-check local de batch context em src/Modules/IntegrationEngine/Tests/BatchContextSmoke.php.
 
 Fase 6 em andamento:

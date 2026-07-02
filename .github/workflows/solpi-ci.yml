@@ -40,3 +40,7 @@ jobs:
       - name: SQL adapter smoke
         working-directory: glpi/plugins/solpi
         run: php src/Modules/IntegrationEngine/Tests/SqlAdapterSmoke.php
+
+      - name: CSV and XML adapter smoke
+        working-directory: glpi/plugins/solpi
+        run: php src/Modules/IntegrationEngine/Tests/CsvXmlAdapterSmoke.php

@@ -176,6 +176,16 @@ Resultado esperado:
 
 - `SqlAdapterSmoke OK`
 
+## 13) CSV and XML adapters local
+
+Execute o self-check local:
+
+- `php src/Modules/IntegrationEngine/Tests/CsvXmlAdapterSmoke.php`
+
+Resultado esperado:
+
+- `CsvXmlAdapterSmoke OK`
+
 Consulta checkpoint salvo:
 - GET /integration-engine/checkpoints?source=erp_sql&adapter=sql&name=companies_sync
 
