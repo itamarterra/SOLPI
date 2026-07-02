@@ -49,6 +49,7 @@ final class RestApiAdapter implements SourceAdapterInterface
             $paramCursor = (string)($pagination['param_cursor'] ?? 'cursor');
             $cursorField = (string)($pagination['cursor_field'] ?? 'next_cursor');
             $stopWhenEmpty = (bool)($pagination['stop_when_empty'] ?? true);
+            $stopWhenShortPage = (bool)($pagination['stop_when_short_page'] ?? true);
 
             for ($i = 0; $i < $maxPages; $i++) {
                 $query = [];
@@ -79,6 +80,18 @@ final class RestApiAdapter implements SourceAdapterInterface
                     break;
                 }
 
+                if ($stopWhenShortPage && count($batchRecords) < $perPage) {
+                    if ($mode !== 'cursor') {
+                        break;
+                    }
+
+                    $decoded = json_decode($batch['response'], true);
+                    $next = is_array($decoded) ? (string)($decoded[$cursorField] ?? '') : '';
+                    if ($next === '' || $next === $cursor) {
+                        break;
+                    }
+                }
+
                 if ($mode === 'offset') {
                     $offset += $perPage;
                 } elseif ($mode === 'cursor') {
@@ -106,6 +119,7 @@ final class RestApiAdapter implements SourceAdapterInterface
                 'pagination_enabled' => $enabledPagination,
                 'pagination_mode' => $mode,
                 'last_cursor' => $lastCursor,
+                'stop_when_short_page' => $enabledPagination ? $stopWhenShortPage : null,
             ],
         ];
     }
