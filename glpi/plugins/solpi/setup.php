@@ -60,13 +60,15 @@ function plugin_solpi_display_central(): void
         return;
     }
 
-    echo '<section class="card mb-3">';
-    echo '<div class="card-header"><strong>SOLPI</strong></div>';
-    echo '<div class="card-body">';
-    echo '<p class="mb-2">Janela SOLPI para importar dados e gerar chamados automaticamente.</p>';
-    echo '<a class="btn btn-primary" target="_blank" rel="noopener noreferrer" href="' . GLPI_ROOT . '/solpi-import.php">Abrir Janela SOLPI</a>';
+    echo '<tr>';
+    echo '<td class="center" style="padding:12px;">';
+    echo '<div style="max-width:980px;margin:0 auto;background:#f8fbff;border:1px solid #dbeafe;border-radius:10px;padding:14px 16px;">';
+    echo '<div style="font-weight:700;margin-bottom:6px;">SOLPI</div>';
+    echo '<div style="margin-bottom:10px;">Janela SOLPI para importar dados e gerar chamados automaticamente.</div>';
+    echo '<a class="vsubmit" target="_blank" rel="noopener noreferrer" href="' . GLPI_ROOT . '/solpi-import.php">Abrir Janela SOLPI</a>';
     echo '</div>';
-    echo '</section>';
+    echo '</td>';
+    echo '</tr>';
 }
 
 require_once __DIR__ . '/inc/install.php';
