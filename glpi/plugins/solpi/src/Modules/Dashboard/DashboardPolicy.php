@@ -18,8 +18,8 @@ final class DashboardPolicy
             return false;
         }
 
-        return Session::haveRight('config', READ)
-            || Session::haveRight('ticket', READ)
-            || Session::haveRight('plugin_solpi', READ);
+        return Session::haveRight('config', 1)
+            || Session::haveRight('ticket', 1)
+            || Session::haveRight('plugin_solpi', 1);
     }
 }

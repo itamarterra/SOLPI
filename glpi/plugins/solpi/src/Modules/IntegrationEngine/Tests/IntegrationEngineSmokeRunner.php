@@ -241,15 +241,13 @@ foreach ($steps as $step) {
     $status = (int)$result['status'];
     $payload = $result['payload'];
 
-    $expect = $step['expect'] ?? null;
+    $expect = $step['expect'];
     $expectOk = true;
     $expectReason = '';
-    if (is_callable($expect) && is_array($payload)) {
+    if (is_array($payload)) {
         $expectResult = $expect($payload);
-        if (is_array($expectResult)) {
-            $expectOk = (bool)($expectResult[0] ?? false);
-            $expectReason = (string)($expectResult[1] ?? 'unexpected response');
-        }
+        $expectOk = $expectResult[0];
+        $expectReason = $expectResult[1];
     }
 
     $isOk = $status >= 200 && $status < 300 && $expectOk;

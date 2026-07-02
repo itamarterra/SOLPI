@@ -40,11 +40,11 @@ final class SqlAdapter implements SourceAdapterInterface
             if (!$enabledPagination) {
                 $stmt = $pdo->prepare($workingQuery);
                 foreach ($params as $key => $value) {
-                    $stmt->bindValue(is_string($key) ? $key : (int)$key + 1, $value);
+                    $stmt->bindValue((string)$key, $value);
                 }
                 $stmt->execute();
                 $rows = $stmt->fetchAll();
-                $records = is_array($rows) ? $rows : [];
+                $records = $rows;
                 $pagesFetched = 1;
             } else {
                 $pageSize = max(1, (int)($pagination['page_size'] ?? 500));
@@ -58,7 +58,7 @@ final class SqlAdapter implements SourceAdapterInterface
                     $stmt = $pdo->prepare($pagedQuery);
 
                     foreach ($params as $key => $value) {
-                        $stmt->bindValue(is_string($key) ? $key : (int)$key + 1, $value);
+                        $stmt->bindValue((string)$key, $value);
                     }
 
                     $stmt->bindValue(':__solpi_limit', $pageSize, PDO::PARAM_INT);
@@ -66,11 +66,11 @@ final class SqlAdapter implements SourceAdapterInterface
 
                     $stmt->execute();
                     $batch = $stmt->fetchAll();
-                    $batchRecords = is_array($batch) ? $batch : [];
+                    $batchRecords = $batch;
 
                     $pagesFetched++;
                     foreach ($batchRecords as $row) {
-                        $records[] = is_array($row) ? $row : [];
+                        $records[] = $row;
                     }
 
                     if ($batchRecords === [] && $stopWhenEmpty) {
@@ -88,10 +88,10 @@ final class SqlAdapter implements SourceAdapterInterface
             $maxIncrementalValue = $this->extractMaxIncrementalValue($records, $incrementalColumn);
 
             return [
-                'records' => is_array($records) ? $records : [],
+                'records' => $records,
                 'meta' => [
                     'adapter' => 'sql',
-                    'count' => is_array($records) ? count($records) : 0,
+                    'count' => count($records),
                     'pagination_enabled' => $enabledPagination,
                     'pages_fetched' => $pagesFetched,
                     'stop_when_short_page' => $enabledPagination ? $stopWhenShortPage : null,

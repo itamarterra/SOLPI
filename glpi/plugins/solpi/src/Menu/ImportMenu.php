@@ -24,10 +24,10 @@ final class ImportMenu extends \CommonGLPI
 
     public static function canView(): bool
     {
-        return Session::haveRight('solpi_view', \READ)
-            || Session::haveRight('solpi_manage', \READ)
-            || Session::haveRight('config', \READ)
-            || Session::haveRight('ticket', \READ);
+        return Session::haveRight('solpi_view', 1)
+            || Session::haveRight('solpi_manage', 1)
+            || Session::haveRight('config', 1)
+            || Session::haveRight('ticket', 1);
     }
 
     public static function getMenuContent(): array

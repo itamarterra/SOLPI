@@ -67,6 +67,14 @@ if (!class_exists('DBmysql')) {
         }
 
         /**
+         * Return number of rows for a result set (GLPI compatibility).
+         */
+        public function numrows(mixed $result): int
+        {
+            return 0;
+        }
+
+        /**
          * Execute a raw query (non-select) and return success.
          * @param string $sql
          * @return bool

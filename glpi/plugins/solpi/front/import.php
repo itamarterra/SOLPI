@@ -255,7 +255,7 @@ function solpi_import_resolve_user_id(string $name, ?string $email, ?string $pho
 
     if (is_array($existing) && isset($existing['id'])) {
         $merged = $existing;
-        $merged['name'] = $name !== '' ? $name : (string) ($existing['name'] ?? $userName ?? '');
+        $merged['name'] = $name !== '' ? $name : (string)($existing['name'] ?? $userName);
 
         if ($email !== '') {
             $merged['email'] = $email;
@@ -626,10 +626,6 @@ if ($step === 'preview') {
             </div>
         </div>
     </div>
-
-    <?php if ($message !== ''): ?>
-        <div class="alert alert-<?= htmlspecialchars($msgType, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>"><?= htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></div>
-    <?php endif; ?>
 
     <div class="row g-4">
         <div class="col-lg-6">

@@ -16,8 +16,12 @@ final class Logger implements LoggerInterface
     {
         $this->writer = new FileLogger();
 
+        $defaultLogDir = defined('GLPI_LOG_DIR')
+            ? (string)GLPI_LOG_DIR
+            : sys_get_temp_dir();
+
         $this->logFile = $logFile
-            ?? GLPI_LOG_DIR . DIRECTORY_SEPARATOR . 'solpi.log';
+            ?? $defaultLogDir . DIRECTORY_SEPARATOR . 'solpi.log';
     }
 
     public function emergency(string $message, array $context = []): void

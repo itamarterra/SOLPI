@@ -29,7 +29,7 @@ if ($baseUrl === '' || $apiKey === '') {
 $sizes = array_values(array_filter(array_map(
     static fn (string $value): int => max(1, (int)trim($value)),
     explode(',', $sizesRaw)
-), static fn (int $size): bool => $size > 0));
+)));
 
 if ($sizes === []) {
     fwrite(STDERR, "Invalid --sizes argument. Example: --sizes=250,500,1000\n");

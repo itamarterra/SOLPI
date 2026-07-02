@@ -176,7 +176,7 @@ $summary = is_array($summaryResponse['payload']['data'] ?? null) ? $summaryRespo
 $batches = is_array($summary['batches'] ?? null) ? $summary['batches'] : [];
 
 $totalSeconds = microtime(true) - $startedAt;
-$throughput = $recordsQueued > 0 && $totalSeconds > 0
+$throughput = $totalSeconds > 0
     ? round($recordsQueued / $totalSeconds, 2)
     : 0.0;
 
@@ -219,7 +219,7 @@ if ($jobsWithMeta < 1) {
     exit(8);
 }
 
-if ((int)($result['summary_batches']['batch_size_max'] ?? 0) < $batchSize) {
+if ((int)$result['summary_batches']['batch_size_max'] < $batchSize) {
     fwrite(STDERR, 'Validation warning: summary batch_size_max is lower than requested batch-size.' . PHP_EOL);
 }
 

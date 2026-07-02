@@ -41,7 +41,7 @@ final class RAGService
 
         // Normalize list form into associative map: ['NAME'=>true]
         if ($entities !== [] && array_values($entities) === $entities) {
-            $entities = array_combine($entities, array_fill(0, count($entities), true)) ?: [];
+            $entities = array_combine($entities, array_fill(0, count($entities), true));
         }
 
         $vector = $this->embedding->generate(

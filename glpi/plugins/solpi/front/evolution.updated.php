@@ -9,9 +9,16 @@ include __DIR__ . '/../inc/includes.php';
 Session::checkLoginUser();
 
 $service = new EvolutionService();
-$status = $service->status();
-$session = $service->session();
-$qrCode = $service->qrCode();
+$instance = $service->fetchInstance();
+$status = [
+    'enabled' => true,
+    'connected' => $service->isConnected(),
+    'connectionStatus' => (string)($instance['connectionStatus'] ?? ''),
+];
+$session = [
+    'instance' => $instance,
+];
+$qrCode = $service->connect();
 
 include __DIR__ . '/../templates/layouts/header.php';
 ?>

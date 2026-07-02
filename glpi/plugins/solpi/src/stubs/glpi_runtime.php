@@ -61,3 +61,11 @@ if (!class_exists('Migration')) {
     {
     }
 }
+
+if (!defined('READ')) {
+    define('READ', 1);
+}
+
+if (!defined('GLPI_LOG_DIR')) {
+    define('GLPI_LOG_DIR', sys_get_temp_dir());
+}

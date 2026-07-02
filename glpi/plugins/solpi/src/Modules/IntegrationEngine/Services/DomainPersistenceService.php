@@ -11,7 +11,6 @@ use SOLPI\Modules\IntegrationEngine\Repositories\UserRecordRepository;
 
 final class DomainPersistenceService
 {
-    private object $db;
     private CompanyRecordRepository $companies;
     private UserRecordRepository $users;
     private AssetRecordRepository $assets;
@@ -23,7 +22,6 @@ final class DomainPersistenceService
             throw new RuntimeException('Conexao com o banco do GLPI nao encontrada.');
         }
 
-        $this->db = $DB;
         $this->companies = new CompanyRecordRepository();
         $this->users = new UserRecordRepository();
         $this->assets = new AssetRecordRepository();

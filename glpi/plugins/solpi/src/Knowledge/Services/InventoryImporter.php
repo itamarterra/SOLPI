@@ -4,18 +4,12 @@ declare(strict_types=1);
 
 namespace SOLPI\Knowledge\Services;
 
-use SOLPI\Knowledge\Builders\EntityBuilder;
-
 final class InventoryImporter
 {
-    private EntityBuilder $builder;
-
     private EntityClassifier $classifier;
 
     public function __construct()
     {
-        $this->builder = new EntityBuilder();
-
         $this->classifier = new EntityClassifier();
     }
 
