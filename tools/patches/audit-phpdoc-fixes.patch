@@ -1,0 +1,606 @@
+--- PATH: src/Core/Collection.php
++++ BEGIN
+<?php
+
+declare(strict_types=1);
+
+namespace SOLPI\Core;
+
+use Countable;
+use IteratorAggregate;
+use ArrayIterator;
+
+final class Collection implements Countable, IteratorAggregate
+{
+    /**
+     * Internal items storage.
+     *
+     * @var array<int,mixed>
+     */
+    private array $items = [];
+
+    public function add(
+        mixed $item
+    ): void{
+
+        $this->items[]=$item;
+
+    }
+
+    /**
+     * Return all items as an indexed array.
+     *
+     * @return array<int,mixed>
+     */
+    public function all(): array
+    {
+        return $this->items;
+    }
+
+    public function count(): int
+    {
+        return count($this->items);
+    }
+
+    /**
+     * @return ArrayIterator<int,mixed>
+     */
+    public function getIterator(): ArrayIterator
+    {
+        return new ArrayIterator(
+            $this->items
+        );
+    }
+}
++++ END
+
+--- PATH: src/AI/AIKernel.php
++++ BEGIN
+<?php
+
+declare(strict_types=1);
+
+namespace SOLPI\AI;
+
+use SOLPI\AI\Services\RAGService;
+use SOLPI\AI\Services\IntentDetector;
+use SOLPI\AI\Services\EntityResolver;
+use SOLPI\AI\Services\ResponseFormatter;
+
+final class AIKernel
+{
+    private RAGService $rag;
+
+    private IntentDetector $intentDetector;
+
+    private EntityResolver $entityResolver;
+
+    private ResponseFormatter $formatter;
+
+    public function __construct()
+    {
+        $this->rag = new RAGService();
+
+        $this->intentDetector = new IntentDetector();
+
+        $this->entityResolver = new EntityResolver();
+
+        $this->formatter = new ResponseFormatter();
+    }
+
+    public function ask(
+        string $question
+    ): string {
+
+        $intent = $this->intentDetector->detect(
+            $question
+        );
+
+        /**
+         * Resolver may return either a list of entity names
+         * `array<int,string>` or an associative map
+         * `array<string,mixed>` — normalize below.
+         *
+         * @var array<int,string>|array<string,mixed> $entities
+         */
+        $entities = $this->entityResolver->resolve(
+            $question
+        );
+
+        // Normalize entities: if resolver returned a list of strings,
+        // convert to an associative map to satisfy downstream callers.
+        if ($entities !== [] && array_values($entities) === $entities) {
+            $entities = array_combine($entities, array_fill(0, count($entities), true)) ?: [];
+        }
+
+        /** @var array<string,mixed> $entities */
+
+        $answer = $this->rag->answer(
+            $question,
+            $intent,
+            $entities
+        );
+
+        return $this->formatter->format(
+            $answer
+        );
+
+    }
+}
++++ END
+
+--- PATH: src/AI/Services/RAGService.php
++++ BEGIN
+<?php
+
+declare(strict_types=1);
+
+namespace SOLPI\AI\Services;
+
+use SOLPI\AI\Memory\VectorMemory;
+
+final class RAGService
+{
+    private EmbeddingService $embedding;
+
+    private RetrieverService $retriever;
+
+    private \SOLPI\AI\PromptBuilder $promptBuilder;
+
+    private VectorMemory $memory;
+
+    public function __construct()
+    {
+        $this->embedding = new EmbeddingService();
+
+        $this->retriever = new RetrieverService();
+
+        $this->promptBuilder = new \SOLPI\AI\PromptBuilder();
+
+        $this->memory = new VectorMemory();
+    }
+
+    /**
+     * Accept either a list of entity names or an associative map.
+     *
+     * @param array<int,string>|array<string,mixed> $entities
+     * @return array<string,mixed>
+     */
+    public function answer(
+        string $question,
+        string $intent,
+        array $entities
+    ): array {
+
+        // Normalize list form into associative map: ['NAME'=>true]
+        if ($entities !== [] && array_values($entities) === $entities) {
+            $entities = array_combine($entities, array_fill(0, count($entities), true)) ?: [];
+        }
+
+        $vector = $this->embedding->generate(
+            $question
+        );
+
+        $documents = $this->retriever->search(
+
+            $vector,
+
+            $this->memory
+
+        );
+
+        return [
+
+            'question'=>$question,
+
+            'intent'=>$intent,
+
+            'entities'=>$entities,
+
+            'documents'=>$documents,
+
+            'prompt'=>$this->promptBuilder->build(
+
+                $question,
+
+                $documents
+
+            )
+
+        ];
+
+    }
+}
++++ END
+
+--- PATH: src/Core/BaseEntity.php
++++ BEGIN
+<?php
+
+declare(strict_types=1);
+
+namespace SOLPI\Core;
+
+use DateTime;
+
+abstract class BaseEntity
+{
+    protected ?int $id = null;
+
+    protected string $uuid;
+
+    protected bool $active = true;
+
+    /**
+     * Entity metadata bag.
+     *
+     * @var array<string,mixed>
+     */
+    protected array $metadata = [];
+
+    protected DateTime $createdAt;
+
+    protected DateTime $updatedAt;
+
+    public function __construct(
+        string $uuid
+    ){
+
+        $this->uuid = $uuid;
+
+        $this->createdAt = new DateTime();
+
+        $this->updatedAt = new DateTime();
+
+    }
+
+    public function id(): ?int
+    {
+        return $this->id;
+    }
+
+    public function setId(
+        int $id
+    ): static{
+
+        $this->id=$id;
+
+        return $this;
+
+    }
+
+    public function uuid(): string
+    {
+        return $this->uuid;
+    }
+
+    public function active(): bool
+    {
+        return $this->active;
+    }
+
+    public function activate(): static
+    {
+        $this->active=true;
+
+        return $this;
+    }
+
+    public function deactivate(): static
+    {
+        $this->active=false;
+
+        return $this;
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function metadata(): array
+    {
+        return $this->metadata;
+    }
+
+    public function setMetadata(
+        string $key,
+        mixed $value
+    ): static{
+
+        $this->metadata[$key]=$value;
+
+        return $this;
+
+    }
+
+    public function createdAt(): DateTime
+    {
+        return $this->createdAt;
+    }
+
+    public function updatedAt(): DateTime
+    {
+        return $this->updatedAt;
+    }
+
+    public function touch(): void
+    {
+        $this->updatedAt=new DateTime();
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    abstract public function toArray(): array;
+}
++++ END
+
+--- PATH: src/Assets/Services/AssetService.php
++++ BEGIN
+<?php
+
+declare(strict_types=1);
+
+namespace SOLPI\Assets\Services;
+
+use Ramsey\Uuid\Uuid;
+use SOLPI\Assets\Entities\Asset;
+use SOLPI\Assets\Repositories\AssetRepository;
+
+final class AssetService
+{
+    private AssetRepository $repository;
+
+    public function __construct()
+    {
+        $this->repository = new AssetRepository();
+    }
+
+    public function create(
+        string $name,
+        string $type
+    ): Asset {
+
+        $asset = new Asset(
+            Uuid::uuid4()->toString(),
+            trim($name),
+            strtoupper($type)
+        );
+
+        $asset->setId(
+            $this->repository->create($asset)
+        );
+
+        return $asset;
+    }
+
+    public function save(
+        Asset $asset
+    ): Asset {
+
+        if ($asset->id() === null) {
+
+            $asset->setId(
+                $this->repository->create($asset)
+            );
+
+            return $asset;
+        }
+
+        $asset->touch();
+
+        $this->repository->update(
+            $asset->id(),
+            $asset
+        );
+
+        return $asset;
+    }
+
+    public function remove(
+        int $id
+    ): bool {
+
+        return $this->repository->delete($id);
+
+    }
+
+    /**
+     * @param int $id
+     * @return array<string,mixed>|null
+     */
+    public function find(
+        int $id
+    ): ?array {
+
+        /** @var array<string,mixed>|null $result */
+        $result = $this->repository->find($id);
+
+        return $result;
+
+    }
+
+    /**
+     * @param string $uuid
+     * @return array<string,mixed>|null
+     */
+    public function findByUUID(
+        string $uuid
+    ): ?array {
+
+        /** @var array<string,mixed>|null $result */
+        $result = $this->repository->findByUUID($uuid);
+
+        return $result;
+
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    public function all(): array
+    {
+        /** @var array<int,array<string,mixed>> $list */
+        $list = $this->repository->all();
+
+        return $list;
+    }
+
+    public function count(): int
+    {
+        return $this->repository->count();
+    }
+}
++++ END
+
+--- PATH: src/Core/BaseRepository.php
++++ BEGIN
+<?php
+
+declare(strict_types=1);
+
+namespace SOLPI\Core;
+
+use DBmysql;
+use RuntimeException;
+
+abstract class BaseRepository
+{
+    protected DBmysql $db;
+
+    protected string $table;
+
+    public function __construct()
+    {
+        global $DB;
+
+        if (!$DB instanceof DBmysql) {
+            throw new RuntimeException(
+                'Conexão com o banco do GLPI não encontrada.'
+            );
+        }
+
+        $this->db = $DB;
+    }
+
+    public function insert(array $data): int
+    {
+        $this->db->insert(
+            $this->table,
+            $data
+        );
+
+        return (int)$this->db->insertId();
+    }
+
+    public function update(
+        int $id,
+        array $data
+    ): bool {
+
+        return (bool)$this->db->update(
+            $this->table,
+            $data,
+            [
+                'id' => $id
+            ]
+        );
+    }
+
+    public function delete(
+        int $id
+    ): bool {
+
+        return (bool)$this->db->delete(
+            $this->table,
+            [
+                'id' => $id
+            ]
+        );
+    }
+
+    /**
+     * @param int $id
+     * @return array<string,mixed>|null
+     */
+    public function find(
+        int $id
+    ): ?array {
+
+        foreach (
+
+            $this->db->request([
+
+                'FROM' => $this->table,
+
+                'WHERE' => [
+
+                    'id' => $id
+
+                ]
+
+            ])
+
+            as $row
+
+        ) {
+
+            return $row;
+
+        }
+
+        return null;
+
+    }
+
+    /**
+     * @param array<string,mixed> $where
+     * @return array<string,mixed>|null
+     */
+    public function findBy(
+        array $where
+    ): ?array {
+
+        foreach (
+
+            $this->db->request([
+
+                'FROM' => $this->table,
+
+                'WHERE' => $where
+
+            ])
+
+            as $row
+
+        ) {
+
+            return $row;
+
+        }
+
+        return null;
+
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    public function all(): array
+    {
+        return iterator_to_array(
+
+            $this->db->request([
+
+                'FROM' => $this->table
+
+            ])
+
+        );
+    }
+
+    public function count(): int
+    {
+        return count($this->all());
+    }
+}
++++ END

@@ -1,0 +1,47 @@
+{
+    "name": "itamarterra/solpi",
+    "description": "SOLPI Professional - Smart Operations Link for GLPI",
+    "type": "glpi-plugin",
+    "license": "MIT",
+    "version": "2.0.0-alpha",
+    "keywords": [
+        "glpi",
+        "plugin",
+        "zabbix",
+        "whatsapp",
+        "evolution-api",
+        "helpdesk",
+        "itsm"
+    ],
+    "authors": [
+        {
+            "name": "Itamar Terra",
+            "email": "dev@itamarterra.local",
+            "role": "Developer"
+        }
+    ],
+    "homepage": "https://example.com",
+    "autoload": {
+        "psr-4": {
+            "SOLPI\\": "src/"
+        }
+        ,
+        "files": [
+            "src/stubs/dbmysql.php",
+            "src/stubs/ramsey_uuid.php",
+            "src/stubs/glpi_runtime.php",
+            "src/stubs/phpspreadsheet.php"
+        ]
+    },
+    "require": {
+        "php": "^8.3"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.2",
+        "sebastian/phpcpd": "^6.0"
+    }
+}

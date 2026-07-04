@@ -1,0 +1,17 @@
+parameters:
+    level: 5
+    paths:
+        - src
+        - api
+        - front
+        - inc
+        - install
+        - public
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false
+    excludePaths:
+        analyse:
+            - vendor/*
+    ignoreErrors:
+        - '#Trait SOLPI\\Traits\\LoggerTrait is used zero times and is not analysed#'
+        - '#Trait SOLPI\\Traits\\ResponseTrait is used zero times and is not analysed#'

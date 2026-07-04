@@ -1,4 +1,41 @@
+<<<<<<< HEAD
 # IntegrationEngine benchmark artifacts
 glpi/plugins/solpi/logs/integration_engine_benchmark_history.jsonl
 glpi/plugins/solpi/logs/integration_engine_benchmark_latest.json
 glpi/plugins/solpi/logs/integration_engine_benchmark_latest.md
+=======
+# Generated reports and analysis outputs
+phpstan-report.txt
+phpstan-report-utf8.txt
+PROJECT_TREE.txt
+PROJECT_DEPENDENCIES.csv
+PROJECT_FILES.csv
+PROJECT_CLASSES.csv
+EMPTY_FILES.csv
+audit_top_50_issues.csv
+
+# Logs
+migration.log
+*.log
+logs/
+
+# Vendor and dependencies
+/vendor/
+composer.lock
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment variables
+.env
+.env.local
+
+# OS specific
+Thumbs.db
+.DS_Store
+>>>>>>> 0cb6d49c (\Implementacao do Core Database e Helpers - Stubs resolvidos")
