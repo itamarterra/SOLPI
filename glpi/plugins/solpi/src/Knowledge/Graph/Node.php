@@ -5,14 +5,10 @@ namespace SOLPI\Knowledge\Graph;
 
 final class Node
 {
-    public function __call(string $method, array $arguments): mixed
-    {
-        return null;
-    }
-
-    public function __get(string $name): mixed
-    {
-        return null;
-    }
+    public function __construct(
+        public readonly string $id,
+        public readonly string $label,
+        public readonly array $properties = []
+    ) {}
 }
 

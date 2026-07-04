@@ -3,16 +3,33 @@ declare(strict_types=1);
 
 namespace SOLPI\Core\Database;
 
-final class Result
+final class Result implements \IteratorAggregate
 {
-    public function __call(string $method, array $arguments): mixed
+    private array $rows;
+
+    public function __construct(array $rows = [])
     {
-        return null;
+        $this->rows = $rows;
     }
 
-    public function __get(string $name): mixed
+    public function getIterator(): \Traversable
     {
-        return null;
+        return new \ArrayIterator($this->rows);
+    }
+
+    public function count(): int
+    {
+        return count($this->rows);
+    }
+
+    public function fetch(): ?array
+    {
+        return array_shift($this->rows);
+    }
+
+    public function all(): array
+    {
+        return $this->rows;
     }
 }
 

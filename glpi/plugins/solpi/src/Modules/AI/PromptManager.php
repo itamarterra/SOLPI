@@ -5,14 +5,18 @@ namespace SOLPI\Modules\AI;
 
 final class PromptManager
 {
-    public function __call(string $method, array $arguments): mixed
-    {
-        return null;
-    }
+    private array $templates = [
+        'default' => "Você é o SOLPI, um assistente inteligente para GLPI.\nQuestão: {{question}}",
+        'summary' => "Resuma o seguinte texto: {{text}}",
+    ];
 
-    public function __get(string $name): mixed
+    public function get(string $name, array $vars = []): string
     {
-        return null;
+        $template = $this->templates[$name] ?? $this->templates['default'];
+        foreach ($vars as $key => $value) {
+            $template = str_replace('{{' . $key . '}}', (string)$value, $template);
+        }
+        return $template;
     }
 }
 

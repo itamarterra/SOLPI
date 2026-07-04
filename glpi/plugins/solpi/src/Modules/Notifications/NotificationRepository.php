@@ -4,9 +4,12 @@ declare(strict_types=1);
 namespace SOLPI\Modules\Notifications;
 
 use SOLPI\Core\BaseRepository;
+use SOLPI\Core\Database\QueryBuilder;
 
 final class NotificationRepository extends BaseRepository
 {
+    protected string $table = 'glpi_solpi_notifications';
+
     public function __construct()
     {
         parent::__construct();
@@ -18,27 +21,29 @@ final class NotificationRepository extends BaseRepository
      */
     public function create(array $data): array
     {
-        $query = "INSERT INTO `glpi_solpi_notifications` (id, type, recipient, data, status, created_at) 
-                  VALUES (?, ?, ?, ?, ?, NOW())";
-        // Prepared statement would go here
+        if (!isset($data['created_at'])) {
+            $data['created_at'] = date('Y-m-d H:i:s');
+        }
+
+        $id = $this->insert($data);
+        $data['id'] = $id;
+
         return $data;
     }
 
     /**
      * @param string $status
+     * @param int $limit
      * @return array<int,array<string,mixed>>
      */
     public function findByStatus(string $status, int $limit = 50): array
     {
-        $query = "SELECT * FROM `glpi_solpi_notifications` WHERE status = '{$status}' ORDER BY created_at DESC LIMIT {$limit}";
-        $result = $this->db->query($query);
-        $notifications = [];
-
-        while ($row = $result->fetch_assoc()) {
-            $notifications[] = $row;
-        }
-
-        return $notifications;
+        $qb = new QueryBuilder($this->db);
+        return $qb->from($this->table)
+                  ->where(['status' => $status])
+                  ->orderBy('created_at', 'DESC')
+                  ->limit($limit)
+                  ->execute();
     }
 
     /**
@@ -46,12 +51,11 @@ final class NotificationRepository extends BaseRepository
      */
     public function getStatistics(): array
     {
-        $query = "SELECT status, COUNT(*) as count FROM `glpi_solpi_notifications` GROUP BY status";
-        $result = $this->db->query($query);
+        $query = "SELECT status, COUNT(*) as count FROM `{$this->table}` GROUP BY status";
         $stats = [];
-
-        while ($row = $result->fetch_assoc()) {
-            $stats[$row['status']] = $row['count'];
+        
+        foreach ($this->db->request($query) as $row) {
+            $stats[$row['status']] = (int)$row['count'];
         }
 
         return $stats;

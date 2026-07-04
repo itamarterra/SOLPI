@@ -8,14 +8,14 @@ final class ModelSelector
     /**
      * @param array<int,mixed> $arguments
      */
-    public function __call(string $method, array $arguments): mixed
+    public function select(string $taskType): string
     {
-        return null;
-    }
-
-    public function __get(string $name): mixed
-    {
-        return null;
+        return match ($taskType) {
+            'complex' => 'gpt-4o',
+            'fast'    => 'gpt-4o-mini',
+            'local'   => 'llama3',
+            default   => 'gpt-4o-mini'
+        };
     }
 }
 

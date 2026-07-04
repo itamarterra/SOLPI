@@ -5,14 +5,29 @@ namespace SOLPI\Core\Database;
 
 final class Criteria
 {
-    public function __call(string $method, array $arguments): mixed
+    private array $conditions = [];
+
+    public function where(string $column, string $operator, mixed $value): self
     {
-        return null;
+        $this->conditions[] = [
+            'column'   => $column,
+            'operator' => $operator,
+            'value'    => $value
+        ];
+        return $this;
     }
 
-    public function __get(string $name): mixed
+    public function toArray(): array
     {
-        return null;
+        $criteria = [];
+        foreach ($this->conditions as $cond) {
+            $key = $cond['column'];
+            if ($cond['operator'] !== '=') {
+                $key .= ' ' . $cond['operator'];
+            }
+            $criteria[$key] = $cond['value'];
+        }
+        return $criteria;
     }
 }
 

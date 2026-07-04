@@ -3,16 +3,30 @@ declare(strict_types=1);
 
 namespace SOLPI\Knowledge\Parsers;
 
+use DOMDocument;
+use RuntimeException;
+
 final class HtmlParser
 {
-    public function __call(string $method, array $arguments): mixed
+    /**
+     * Analisa um arquivo HTML e extrai o texto visível.
+     */
+    public function parse(string $filePath): string
     {
-        return null;
-    }
+        if (!file_exists($filePath)) {
+            throw new RuntimeException("Arquivo não encontrado: {$filePath}");
+        }
 
-    public function __get(string $name): mixed
-    {
-        return null;
+        $content = file_get_contents($filePath);
+        if ($content === false) {
+            throw new RuntimeException("Não foi possível ler o arquivo HTML.");
+        }
+
+        $dom = new DOMDocument();
+        // Silencia avisos de HTML mal formatado
+        @$dom->loadHTML($content);
+        
+        return trim($dom->textContent);
     }
 }
 

@@ -5,14 +5,24 @@ namespace SOLPI\Modules\Zabbix;
 
 final class Webhook
 {
-    public function __call(string $method, array $arguments): mixed
+    private TriggerParser $parser;
+
+    public function __construct()
     {
-        return null;
+        $this->parser = new TriggerParser();
     }
 
-    public function __get(string $name): mixed
+    public function handle(array $payload): bool
     {
-        return null;
+        $alert = $this->parser->parse($payload);
+        
+        // Lógica para processar o alerta (ex: abrir ticket se for PROBLEM)
+        if ($alert['status'] === 'PROBLEM') {
+            // Aqui chamaria o TicketRepository
+            return true;
+        }
+
+        return false;
     }
 }
 

@@ -5,14 +5,14 @@ namespace SOLPI\Knowledge\Builders;
 
 final class RelationshipBuilder
 {
-    public function __call(string $method, array $arguments): mixed
+    public function build(string $fromId, string $toId, string $type): \SOLPI\Knowledge\Graph\Edge
     {
-        return null;
-    }
-
-    public function __get(string $name): mixed
-    {
-        return null;
+        return new \SOLPI\Knowledge\Graph\Edge(
+            $fromId,
+            $toId,
+            $type,
+            ['created_at' => date('Y-m-d H:i:s')]
+        );
     }
 }
 

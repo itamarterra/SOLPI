@@ -5,14 +5,19 @@ namespace SOLPI\Core\Database;
 
 final class DatabaseManager
 {
-    public function __call(string $method, array $arguments): mixed
+    private static ?Connection $connection = null;
+
+    public static function getInstance(): Connection
     {
-        return null;
+        if (self::$connection === null) {
+            self::$connection = new Connection();
+        }
+        return self::$connection;
     }
 
-    public function __get(string $name): mixed
+    public static function getBuilder(): QueryBuilder
     {
-        return null;
+        return new QueryBuilder(self::getInstance()->getRaw());
     }
 }
 

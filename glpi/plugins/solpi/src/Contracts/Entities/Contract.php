@@ -5,19 +5,12 @@ namespace SOLPI\Contracts\Entities;
 
 final class Contract
 {
-    /**
-     * @param string $method
-     * @param array<string,mixed> $arguments
-     * @return mixed
-     */
-    public function __call(string $method, array $arguments): mixed
-    {
-        return null;
-    }
-
-    public function __get(string $name): mixed
-    {
-        return null;
-    }
+    public function __construct(
+        public readonly int $id,
+        public readonly string $number,
+        public readonly int $companyId,
+        public readonly string $startDate,
+        public readonly ?string $endDate = null
+    ) {}
 }
 

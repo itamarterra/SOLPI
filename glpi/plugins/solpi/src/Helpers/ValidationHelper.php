@@ -5,14 +5,19 @@ namespace SOLPI\Helpers;
 
 final class ValidationHelper
 {
-    public function __call(string $method, array $arguments): mixed
+    public static function email(string $email): bool
     {
-        return null;
+        return (bool)filter_var($email, FILTER_VALIDATE_EMAIL);
     }
 
-    public function __get(string $name): mixed
+    public static function required(array $data, array $fields): bool
     {
-        return null;
+        foreach ($fields as $field) {
+            if (!isset($data[$field]) || empty($data[$field])) {
+                return false;
+            }
+        }
+        return true;
     }
 }
 

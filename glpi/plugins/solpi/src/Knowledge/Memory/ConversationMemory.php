@@ -5,14 +5,25 @@ namespace SOLPI\Knowledge\Memory;
 
 final class ConversationMemory
 {
-    public function __call(string $method, array $arguments): mixed
+    private array $history = [];
+
+    public function add(string $role, string $text): void
     {
-        return null;
+        $this->history[] = [
+            'role' => $role,
+            'text' => $text,
+            'time' => date('Y-m-d H:i:s')
+        ];
     }
 
-    public function __get(string $name): mixed
+    public function getAll(): array
     {
-        return null;
+        return $this->history;
+    }
+
+    public function getLast(): ?array
+    {
+        return empty($this->history) ? null : end($this->history);
     }
 }
 

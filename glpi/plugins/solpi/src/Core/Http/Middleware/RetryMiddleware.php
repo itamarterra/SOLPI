@@ -5,13 +5,20 @@ namespace SOLPI\Core\Http\Middleware;
 
 final class RetryMiddleware
 {
-    public function __call(string $method, array $arguments): mixed
+    public function execute(callable $action, int $maxRetries = 3, int $delay = 1000): mixed
     {
-        return null;
-    }
-
-    public function __get(string $name): mixed
-    {
+        $attempts = 0;
+        while ($attempts < $maxRetries) {
+            try {
+                return $action();
+            } catch (\Exception $e) {
+                $attempts++;
+                if ($attempts >= $maxRetries) {
+                    throw $e;
+                }
+                usleep($delay * 1000);
+            }
+        }
         return null;
     }
 }

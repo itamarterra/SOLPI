@@ -5,14 +5,24 @@ namespace SOLPI\Knowledge;
 
 final class SyncEngine
 {
-    public function __call(string $method, array $arguments): mixed
+    private array $tasks = [];
+
+    public function addTask(callable $task): void
     {
-        return null;
+        $this->tasks[] = $task;
     }
 
-    public function __get(string $name): mixed
+    public function run(): array
     {
-        return null;
+        $results = [];
+        foreach ($this->tasks as $task) {
+            $results[] = $task();
+        }
+        return [
+            'status'    => 'success',
+            'processed' => count($results),
+            'time'      => date('Y-m-d H:i:s')
+        ];
     }
 }
 

@@ -5,14 +5,14 @@ namespace SOLPI\Helpers;
 
 final class DateHelper
 {
-    public function __call(string $method, array $arguments): mixed
+    public static function format(string $date, string $format = 'd/m/Y H:i'): string
     {
-        return null;
+        return date($format, strtotime($date));
     }
 
-    public function __get(string $name): mixed
+    public static function now(): string
     {
-        return null;
+        return date('Y-m-d H:i:s');
     }
 }
 

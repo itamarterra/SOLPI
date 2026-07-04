@@ -3,12 +3,14 @@ declare(strict_types=1);
 
 namespace SOLPI\Contracts\Repositories;
 
-use DBmysql;
 use SOLPI\Contracts\Entities\Contract;
 use SOLPI\Core\BaseRepository;
+use SOLPI\Core\Database\QueryBuilder;
 
 final class ContractRepository extends BaseRepository
 {
+    protected string $table = 'glpi_solpi_contracts';
+
     public function __construct()
     {
         parent::__construct();
@@ -20,16 +22,13 @@ final class ContractRepository extends BaseRepository
      */
     public function findBy(array $filters = []): array
     {
-        $query = "SELECT * FROM `glpi_solpi_contracts` WHERE 1=1";
+        $qb = new QueryBuilder($this->db);
+        $rows = $qb->from($this->table)
+                   ->where($filters)
+                   ->execute();
 
-        foreach ($filters as $key => $value) {
-            $query .= " AND `{$key}` = '{$value}'";
-        }
-
-        $result = $this->db->query($query);
         $contracts = [];
-
-        while ($row = $result->fetch_assoc()) {
+        foreach ($rows as $row) {
             $contracts[] = $this->hydrate($row);
         }
 
@@ -41,10 +40,12 @@ final class ContractRepository extends BaseRepository
      */
     public function getStatistics(): array
     {
-        $query = "SELECT COUNT(*) as total, SUM(value) as sum_value FROM `glpi_solpi_contracts`";
-        $result = $this->db->query($query);
+        $qb = new QueryBuilder($this->db);
+        $result = $qb->from($this->table)
+                    ->select(['COUNT(*) as total', 'SUM(value) as sum_value'])
+                    ->first();
         
-        return $result->fetch_assoc() ?: ['total' => 0, 'sum_value' => 0];
+        return $result ?: ['total' => 0, 'sum_value' => 0];
     }
 
     /**
@@ -54,11 +55,11 @@ final class ContractRepository extends BaseRepository
     private function hydrate(array $row): Contract
     {
         return new Contract(
-            $row['id'],
-            $row['number'],
-            $row['company_id'],
-            $row['start_date'],
-            $row['end_date']
+            (int)$row['id'],
+            (string)$row['number'],
+            (int)$row['company_id'],
+            (string)$row['start_date'],
+            $row['end_date'] ?? null
         );
     }
 
@@ -68,9 +69,26 @@ final class ContractRepository extends BaseRepository
      */
     public function save(Contract $contract): Contract
     {
-        $query = "INSERT INTO `glpi_solpi_contracts` (id, number, company_id, start_date, end_date) VALUES (?, ?, ?, ?, ?)";
-        // Prepared statement would go here
-        return $contract;
+        $data = [
+            'number'     => $contract->number,
+            'company_id' => $contract->companyId,
+            'start_date' => $contract->startDate,
+            'end_date'   => $contract->endDate,
+        ];
+
+        if ($contract->id > 0) {
+            $this->update($contract->id, $data);
+            return $contract;
+        }
+
+        $id = $this->insert($data);
+        return new Contract(
+            $id,
+            $contract->number,
+            $contract->companyId,
+            $contract->startDate,
+            $contract->endDate
+        );
     }
 }
 

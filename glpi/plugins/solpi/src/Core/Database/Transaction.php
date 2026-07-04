@@ -3,16 +3,30 @@ declare(strict_types=1);
 
 namespace SOLPI\Core\Database;
 
+use DBmysql;
+
 final class Transaction
 {
-    public function __call(string $method, array $arguments): mixed
+    private DBmysql $db;
+
+    public function __construct(DBmysql $db)
     {
-        return null;
+        $this->db = $db;
     }
 
-    public function __get(string $name): mixed
+    public function begin(): void
     {
-        return null;
+        $this->db->query('START TRANSACTION');
+    }
+
+    public function commit(): void
+    {
+        $this->db->query('COMMIT');
+    }
+
+    public function rollback(): void
+    {
+        $this->db->query('ROLLBACK');
     }
 }
 

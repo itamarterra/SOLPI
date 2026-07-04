@@ -3,16 +3,33 @@ declare(strict_types=1);
 
 namespace SOLPI\Core\Database;
 
+use DBmysql;
+use RuntimeException;
+
 final class Connection
 {
-    public function __call(string $method, array $arguments): mixed
+    private DBmysql $db;
+
+    public function __construct(?DBmysql $db = null)
     {
-        return null;
+        if ($db === null) {
+            global $DB;
+            if (!$DB instanceof DBmysql) {
+                throw new RuntimeException("Conexão com o banco de dados não disponível no GLPI.");
+            }
+            $db = $DB;
+        }
+        $this->db = $db;
     }
 
-    public function __get(string $name): mixed
+    public function getRaw(): DBmysql
     {
-        return null;
+        return $this->db;
+    }
+
+    public function query(string $query): mixed
+    {
+        return $this->db->query($query);
     }
 }
 

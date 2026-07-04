@@ -4,9 +4,12 @@ declare(strict_types=1);
 namespace SOLPI\Knowledge\Memory;
 
 use SOLPI\Core\BaseRepository;
+use SOLPI\Core\Database\QueryBuilder;
 
 final class MemoryRepository extends BaseRepository
 {
+    protected string $table = 'glpi_solpi_memory_conversations';
+
     public function __construct()
     {
         parent::__construct();
@@ -18,10 +21,12 @@ final class MemoryRepository extends BaseRepository
      */
     public function getConversation(string $conversationId): array
     {
-        $query = "SELECT * FROM `glpi_solpi_memory_conversations` WHERE id = '{$conversationId}'";
-        $result = $this->db->query($query);
+        $qb = new QueryBuilder($this->db);
+        $result = $qb->from($this->table)
+                    ->where(['id' => $conversationId])
+                    ->first();
         
-        return $result->fetch_assoc() ?: [];
+        return $result ?: [];
     }
 
     /**
@@ -29,15 +34,11 @@ final class MemoryRepository extends BaseRepository
      */
     public function getRecent(int $limit = 50): array
     {
-        $query = "SELECT * FROM `glpi_solpi_memory_conversations` ORDER BY created_at DESC LIMIT {$limit}";
-        $result = $this->db->query($query);
-        $conversations = [];
-
-        while ($row = $result->fetch_assoc()) {
-            $conversations[] = $row;
-        }
-
-        return $conversations;
+        $qb = new QueryBuilder($this->db);
+        return $qb->from($this->table)
+                  ->orderBy('created_at', 'DESC')
+                  ->limit($limit)
+                  ->execute();
     }
 
     /**
@@ -46,9 +47,11 @@ final class MemoryRepository extends BaseRepository
      */
     public function save(array $data): bool
     {
-        $query = "INSERT INTO `glpi_solpi_memory_conversations` (id, data, created_at) VALUES (?, ?, NOW())";
-        // Prepared statement would go here
-        return true;
+        if (!isset($data['created_at'])) {
+            $data['created_at'] = date('Y-m-d H:i:s');
+        }
+
+        return $this->insert($data) > 0;
     }
 }
 

@@ -5,17 +5,16 @@ namespace SOLPI\AI;
 
 final class Conversation
 {
-    /**
-     * @param array<int,mixed> $arguments
-     */
-    public function __call(string $method, array $arguments): mixed
+    private array $metadata;
+
+    public function __construct(array $metadata = [])
     {
-        return null;
+        $this->metadata = $metadata;
     }
 
-    public function __get(string $name): mixed
+    public function getMetadata(): array
     {
-        return null;
+        return $this->metadata;
     }
 }
 

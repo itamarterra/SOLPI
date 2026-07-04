@@ -5,14 +5,15 @@ namespace SOLPI\Core\Http\Transport;
 
 final class CurlResponseParser
 {
-    public function __call(string $method, array $arguments): mixed
+    public function parse(string $response): array
     {
-        return null;
+        $data = json_decode($response, true);
+        return is_array($data) ? $data : ['raw' => $response];
     }
 
-    public function __get(string $name): mixed
+    public function getStatusCode($ch): int
     {
-        return null;
+        return (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
     }
 }
 

@@ -5,14 +5,27 @@ namespace SOLPI\Knowledge\Graph;
 
 final class Graph
 {
-    public function __call(string $method, array $arguments): mixed
+    private array $nodes = [];
+    private array $edges = [];
+
+    public function addNode(Node $node): void
     {
-        return null;
+        $this->nodes[$node->id] = $node;
     }
 
-    public function __get(string $name): mixed
+    public function addEdge(Edge $edge): void
     {
-        return null;
+        $this->edges[] = $edge;
+    }
+
+    public function getNodes(): array
+    {
+        return $this->nodes;
+    }
+
+    public function getEdges(): array
+    {
+        return $this->edges;
     }
 }
 

@@ -5,14 +5,11 @@ namespace SOLPI\Documents\Entities;
 
 final class Document
 {
-    public function __call(string $method, array $arguments): mixed
-    {
-        return null;
-    }
-
-    public function __get(string $name): mixed
-    {
-        return null;
-    }
+    public function __construct(
+        public readonly int $id,
+        public readonly string $filename,
+        public readonly string $path,
+        public readonly int $size
+    ) {}
 }
 

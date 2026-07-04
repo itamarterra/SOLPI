@@ -5,14 +5,19 @@ namespace SOLPI\Helpers;
 
 final class SecurityHelper
 {
-    public function __call(string $method, array $arguments): mixed
+    public static function hash(string $password): string
     {
-        return null;
+        return password_hash($password, PASSWORD_BCRYPT);
     }
 
-    public function __get(string $name): mixed
+    public static function verify(string $password, string $hash): bool
     {
-        return null;
+        return password_verify($password, $hash);
+    }
+
+    public static function generateToken(int $length = 32): string
+    {
+        return bin2hex(random_bytes($length / 2));
     }
 }
 

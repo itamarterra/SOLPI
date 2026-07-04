@@ -5,9 +5,12 @@ namespace SOLPI\Documents\Repositories;
 
 use SOLPI\Documents\Entities\Document;
 use SOLPI\Core\BaseRepository;
+use SOLPI\Core\Database\QueryBuilder;
 
 final class DocumentRepository extends BaseRepository
 {
+    protected string $table = 'glpi_solpi_documents';
+
     public function __construct()
     {
         parent::__construct();
@@ -19,16 +22,13 @@ final class DocumentRepository extends BaseRepository
      */
     public function findBy(array $filters = []): array
     {
-        $query = "SELECT * FROM `glpi_solpi_documents` WHERE 1=1";
+        $qb = new QueryBuilder($this->db);
+        $rows = $qb->from($this->table)
+                   ->where($filters)
+                   ->execute();
 
-        foreach ($filters as $key => $value) {
-            $query .= " AND `{$key}` = '{$value}'";
-        }
-
-        $result = $this->db->query($query);
         $documents = [];
-
-        while ($row = $result->fetch_assoc()) {
+        foreach ($rows as $row) {
             $documents[] = $this->hydrate($row);
         }
 
@@ -40,11 +40,12 @@ final class DocumentRepository extends BaseRepository
      */
     public function getTotalStorageSize(): int
     {
-        $query = "SELECT SUM(size) as total FROM `glpi_solpi_documents`";
-        $result = $this->db->query($query);
-        $row = $result->fetch_assoc();
+        $qb = new QueryBuilder($this->db);
+        $row = $qb->from($this->table)
+                  ->select(['SUM(size) as total'])
+                  ->first();
         
-        return $row['total'] ?? 0;
+        return (int)($row['total'] ?? 0);
     }
 
     /**
@@ -54,10 +55,10 @@ final class DocumentRepository extends BaseRepository
     private function hydrate(array $row): Document
     {
         return new Document(
-            $row['id'],
-            $row['filename'],
-            $row['path'],
-            $row['size']
+            (int)$row['id'],
+            (string)$row['filename'],
+            (string)$row['path'],
+            (int)$row['size']
         );
     }
 
@@ -67,9 +68,24 @@ final class DocumentRepository extends BaseRepository
      */
     public function save(Document $document): Document
     {
-        $query = "INSERT INTO `glpi_solpi_documents` (id, filename, path, size) VALUES (?, ?, ?, ?)";
-        // Prepared statement would go here
-        return $document;
+        $data = [
+            'filename' => $document->filename,
+            'path'     => $document->path,
+            'size'     => $document->size,
+        ];
+
+        if ($document->id > 0) {
+            $this->update($document->id, $data);
+            return $document;
+        }
+
+        $id = $this->insert($data);
+        return new Document(
+            $id,
+            $document->filename,
+            $document->path,
+            $document->size
+        );
     }
 }
 

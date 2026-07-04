@@ -5,14 +5,16 @@ namespace SOLPI\Modules\AI;
 
 final class KnowledgeBase
 {
-    public function __call(string $method, array $arguments): mixed
+    private \SOLPI\AI\Services\RetrieverService $retriever;
+
+    public function __construct()
     {
-        return null;
+        $this->retriever = new \SOLPI\AI\Services\RetrieverService();
     }
 
-    public function __get(string $name): mixed
+    public function query(string $question, int $limit = 5): array
     {
-        return null;
+        return $this->retriever->retrieve($question, $limit);
     }
 }
 

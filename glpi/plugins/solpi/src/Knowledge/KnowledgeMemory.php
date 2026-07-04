@@ -5,14 +5,21 @@ namespace SOLPI\Knowledge;
 
 final class KnowledgeMemory
 {
-    public function __call(string $method, array $arguments): mixed
+    private array $data = [];
+
+    public function set(string $key, mixed $value): void
     {
-        return null;
+        $this->data[$key] = $value;
     }
 
-    public function __get(string $name): mixed
+    public function get(string $key): mixed
     {
-        return null;
+        return $this->data[$key] ?? null;
+    }
+
+    public function clear(): void
+    {
+        $this->data = [];
     }
 }
 
