@@ -1,0 +1,4 @@
+# IntegrationEngine benchmark artifacts
+glpi/plugins/solpi/logs/integration_engine_benchmark_history.jsonl
+glpi/plugins/solpi/logs/integration_engine_benchmark_latest.json
+glpi/plugins/solpi/logs/integration_engine_benchmark_latest.md

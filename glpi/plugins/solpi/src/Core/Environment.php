@@ -11,9 +11,11 @@ final class Environment
         mixed $default=null
     ): mixed {
 
+        $envValue = getenv($key);
+
         return $_ENV[$key]
 
-            ?? getenv($key)
+            ?? ($envValue !== false ? $envValue : null)
 
             ?? $default;
 

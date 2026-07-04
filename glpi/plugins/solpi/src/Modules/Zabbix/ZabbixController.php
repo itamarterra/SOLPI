@@ -5,14 +5,43 @@ namespace SOLPI\Modules\Zabbix;
 
 final class ZabbixController
 {
-    public function __call(string $method, array $arguments): mixed
+    private ZabbixService $service;
+
+    public function __construct()
     {
-        return null;
+        $this->service = new ZabbixService();
     }
 
-    public function __get(string $name): mixed
+    /**
+     * @return array<string,mixed>
+     */
+    public function ingest(array $payload): array
     {
-        return null;
+        return $this->service->ingest($payload);
+    }
+
+    /**
+     * @return array<string,int>
+     */
+    public function summary(): array
+    {
+        return $this->service->summary();
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    public function recent(int $limit = 20): array
+    {
+        return $this->service->recent($limit);
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function acknowledge(int $alertId): array
+    {
+        return $this->service->acknowledge($alertId);
     }
 }
 

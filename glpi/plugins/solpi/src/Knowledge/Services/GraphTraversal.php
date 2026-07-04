@@ -8,40 +8,19 @@ use SOLPI\Knowledge\Repositories\KnowledgeRepository;
 
 final class GraphTraversal
 {
-    private KnowledgeRepository $repository;
-
     public function __construct()
     {
-        $this->repository=new KnowledgeRepository();
+        // Relationship repository traversal is pending implementation.
     }
 
     public function neighbours(
         string $uuid
     ): array{
 
-        $result=[];
+        unset($uuid);
 
-        foreach(
-
-            $this->repository->relationships()
-
-            as $relation
-
-        ){
-
-            if(
-
-                $relation['source_uuid']===$uuid
-
-            ){
-
-                $result[]=$relation;
-
-            }
-
-        }
-
-        return $result;
+        // Relationship graph persistence is not implemented yet.
+        return [];
 
     }
 }

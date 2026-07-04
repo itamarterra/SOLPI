@@ -1,6 +1,6 @@
-$root = 'c:\zabbix\glpi\plugins\solpi'
+$root = $PSScriptRoot
 $files = Get-ChildItem -Path $root -Recurse -Filter '*.php' | Where-Object { $_.Length -eq 0 }
-Write-Host "Found $($files.Count) empty PHP files."
+Write-Host "Found $($files.Count) empty PHP files in: $root"
 foreach ($f in $files) {
     $rel = $f.FullName.Substring($root.Length + 1).TrimStart('\')
     $parts = $rel -split '\\'

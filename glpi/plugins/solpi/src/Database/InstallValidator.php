@@ -10,9 +10,9 @@ final class InstallValidator
     {
         $errors=[];
 
-        if(version_compare(PHP_VERSION,'8.2','<')){
+        if(version_compare(PHP_VERSION,'8.3.0','<')){
 
-            $errors[]='PHP 8.2 ou superior é obrigatório.';
+            $errors[]='PHP 8.3.0 ou superior é obrigatório.';
 
         }
 

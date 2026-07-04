@@ -1,0 +1,9 @@
+[submodule "research/openclaude"]
+	path = research/openclaude
+	url = https://github.com/Gitlawb/openclaude.git
+[submodule "research/hermes-agent"]
+	path = research/hermes-agent
+	url = https://github.com/gnanam1990/hermes-agent.git
+[submodule "research/openclaw-mine"]
+	path = research/openclaw-mine
+	url = https://github.com/gnanam1990/openclaw-mine.git

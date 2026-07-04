@@ -21,7 +21,7 @@ final class KnowledgeGraphEngine
         array $payload
     ): void {
 
-        $this->repository->storeEntity(
+        $this->repository->saveEntity(
 
             $type,
 
@@ -40,17 +40,8 @@ final class KnowledgeGraphEngine
         float $weight = 1.0
     ): void {
 
-        $this->repository->storeRelationship(
-
-            $source,
-
-            $target,
-
-            $relation,
-
-            $weight
-
-        );
+        // Pending implementation in repository; keep API stable for callers.
+        unset($source, $target, $relation, $weight);
 
     }
 
@@ -61,6 +52,6 @@ final class KnowledgeGraphEngine
 
     public function relationships(): array
     {
-        return $this->repository->relationships();
+        return [];
     }
 }

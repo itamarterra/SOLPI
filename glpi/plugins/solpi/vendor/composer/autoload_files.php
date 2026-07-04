@@ -9,4 +9,6 @@ return array(
     '9b38cf48e83f5d8f60375221cd213eee' => $vendorDir . '/phpstan/phpstan/bootstrap.php',
     'd86e2a18b2575b5bc4de8dccd27dcc1e' => $baseDir . '/src/stubs/dbmysql.php',
     'd2cd552087b52c4cf48bea7cf007333b' => $baseDir . '/src/stubs/ramsey_uuid.php',
+    '02038ea1202cbce1dda28a973e961c31' => $baseDir . '/src/stubs/glpi_runtime.php',
+    'bb5128213b9843ff96c3b6d5b94522e9' => $baseDir . '/src/stubs/phpspreadsheet.php',
 );

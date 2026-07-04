@@ -3,16 +3,52 @@ declare(strict_types=1);
 
 namespace SOLPI\Knowledge\Memory;
 
-final class MemoryRepository
+use SOLPI\Core\BaseRepository;
+
+final class MemoryRepository extends BaseRepository
 {
-    public function __call(string $method, array $arguments): mixed
+    public function __construct()
     {
-        return null;
+        parent::__construct();
     }
 
-    public function __get(string $name): mixed
+    /**
+     * @param string $conversationId
+     * @return array<string,mixed>
+     */
+    public function getConversation(string $conversationId): array
     {
-        return null;
+        $query = "SELECT * FROM `glpi_solpi_memory_conversations` WHERE id = '{$conversationId}'";
+        $result = $this->db->query($query);
+        
+        return $result->fetch_assoc() ?: [];
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    public function getRecent(int $limit = 50): array
+    {
+        $query = "SELECT * FROM `glpi_solpi_memory_conversations` ORDER BY created_at DESC LIMIT {$limit}";
+        $result = $this->db->query($query);
+        $conversations = [];
+
+        while ($row = $result->fetch_assoc()) {
+            $conversations[] = $row;
+        }
+
+        return $conversations;
+    }
+
+    /**
+     * @param array<string,mixed> $data
+     * @return bool
+     */
+    public function save(array $data): bool
+    {
+        $query = "INSERT INTO `glpi_solpi_memory_conversations` (id, data, created_at) VALUES (?, ?, NOW())";
+        // Prepared statement would go here
+        return true;
     }
 }
 

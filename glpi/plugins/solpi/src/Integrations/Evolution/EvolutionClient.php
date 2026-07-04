@@ -34,7 +34,7 @@ final class EvolutionClient
     {
         $all = $this->get('/instance/fetchInstances');
 
-        if (!is_array($all) || !isset($all[0])) {
+        if (!isset($all[0])) {
             return ['connectionStatus' => 'disconnected'];
         }
 

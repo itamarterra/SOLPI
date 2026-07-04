@@ -11,6 +11,8 @@ services:
     command: >
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_bin
+    ports:
+      - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
 
@@ -25,6 +27,8 @@ services:
       MYSQL_DATABASE: zabbix
       MYSQL_USER: zabbix
       MYSQL_PASSWORD: zabbix
+    ports:
+      - "10051:10051"
 
   web:
     image: zabbix/zabbix-web-nginx-mysql:alpine-latest

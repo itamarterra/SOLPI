@@ -19,6 +19,10 @@ echo "<td><a href='tickets.php'>🎫 Tickets SOLPI</a></td>";
 echo "</tr>";
 
 echo "<tr>";
+echo "<td><a href='/solpi-import.php' target='_blank' rel='noopener noreferrer'>📥 Janela de Importação SOLPI (nova aba)</a></td>";
+echo "</tr>";
+
+echo "<tr>";
 echo "<td><a href='glpi_tickets.php'>🖥️ Chamados GLPI</a></td>";
 echo "</tr>";
 

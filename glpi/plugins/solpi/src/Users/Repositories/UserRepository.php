@@ -119,6 +119,54 @@ final class UserRepository
         return null;
     }
 
+    public function findByEmail(string $email): ?array
+    {
+        $iterator = $this->db->request([
+            'FROM' => 'glpi_plugin_solpi_users',
+            'WHERE' => [
+                'email' => $email
+            ]
+        ]);
+
+        foreach ($iterator as $row) {
+            return $row;
+        }
+
+        return null;
+    }
+
+    public function findByName(string $name): ?array
+    {
+        $iterator = $this->db->request([
+            'FROM' => 'glpi_plugin_solpi_users',
+            'WHERE' => [
+                'name' => $name
+            ]
+        ]);
+
+        foreach ($iterator as $row) {
+            return $row;
+        }
+
+        return null;
+    }
+
+    public function findByPhone(string $phone): ?array
+    {
+        $iterator = $this->db->request([
+            'FROM' => 'glpi_plugin_solpi_users',
+            'WHERE' => [
+                'phone' => $phone
+            ]
+        ]);
+
+        foreach ($iterator as $row) {
+            return $row;
+        }
+
+        return null;
+    }
+
     public function all(): array
     {
         return iterator_to_array(

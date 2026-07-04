@@ -6,7 +6,6 @@ namespace SOLPI\Knowledge\Services;
 
 use SOLPI\Knowledge\HtmlImporter;
 use SOLPI\Knowledge\EntityExtractor;
-use SOLPI\Knowledge\Builders\EntityBuilder;
 
 final class ImportPipeline
 {
@@ -14,15 +13,12 @@ final class ImportPipeline
 
     private EntityExtractor $extractor;
 
-    private EntityBuilder $builder;
-
     private KnowledgeService $knowledge;
 
     public function __construct()
     {
         $this->htmlImporter = new HtmlImporter();
         $this->extractor = new EntityExtractor();
-        $this->builder = new EntityBuilder();
         $this->knowledge = new KnowledgeService();
     }
 

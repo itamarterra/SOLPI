@@ -10,12 +10,6 @@ final class SmartInventoryParser
 
     private ModelDetector $model;
 
-    private WarrantyDetector $warranty;
-
-    private CompanyMatcher $company;
-
-    private UserMatcher $user;
-
     private EntityClassifier $classifier;
 
     public function __construct()
@@ -23,12 +17,6 @@ final class SmartInventoryParser
         $this->manufacturer = new ManufacturerDetector();
 
         $this->model = new ModelDetector();
-
-        $this->warranty = new WarrantyDetector();
-
-        $this->company = new CompanyMatcher();
-
-        $this->user = new UserMatcher();
 
         $this->classifier = new EntityClassifier();
     }

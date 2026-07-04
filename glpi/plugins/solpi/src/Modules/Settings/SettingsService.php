@@ -3,16 +3,41 @@ declare(strict_types=1);
 
 namespace SOLPI\Modules\Settings;
 
+use SOLPI\Core\Config;
+
 final class SettingsService
 {
-    public function __call(string $method, array $arguments): mixed
+    private SettingsRepository $repository;
+
+    public function __construct()
     {
-        return null;
+        $this->repository = new SettingsRepository();
     }
 
-    public function __get(string $name): mixed
+    /**
+     * @return array<string,mixed>
+     */
+    public function all(string $module = 'core'): array
     {
-        return null;
+        return $this->repository->all($module);
+    }
+
+    public function get(string $module, string $key, mixed $default = null): mixed
+    {
+        $value = $this->repository->get($module, $key, '__missing__');
+        if ($value !== '__missing__') {
+            return $value;
+        }
+
+        $config = new Config();
+        $config->load();
+
+        return $config->get($module . '.' . $key, $default);
+    }
+
+    public function set(string $module, string $key, mixed $value, string $type = 'string'): void
+    {
+        $this->repository->upsert($module, $key, $value, $type);
     }
 }
 

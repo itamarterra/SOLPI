@@ -52,7 +52,7 @@ final class AIKernel
         // Normalize entities: if resolver returned a list of strings,
         // convert to an associative map to satisfy downstream callers.
         if ($entities !== [] && array_values($entities) === $entities) {
-            $entities = array_combine($entities, array_fill(0, count($entities), true)) ?: [];
+            $entities = array_combine($entities, array_fill(0, count($entities), true));
         }
 
         /** @var array<string,mixed> $entities */
