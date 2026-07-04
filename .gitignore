@@ -1,9 +1,8 @@
-<<<<<<< HEAD
 # IntegrationEngine benchmark artifacts
 glpi/plugins/solpi/logs/integration_engine_benchmark_history.jsonl
 glpi/plugins/solpi/logs/integration_engine_benchmark_latest.json
 glpi/plugins/solpi/logs/integration_engine_benchmark_latest.md
-=======
+
 # Generated reports and analysis outputs
 phpstan-report.txt
 phpstan-report-utf8.txt
@@ -38,4 +37,3 @@ composer.lock
 # OS specific
 Thumbs.db
 .DS_Store
->>>>>>> 0cb6d49c (\Implementacao do Core Database e Helpers - Stubs resolvidos")

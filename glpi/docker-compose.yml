@@ -47,11 +47,11 @@ services:
       - glpi_files:/var/glpi/files
       - glpi_marketplace:/var/glpi/marketplace
       - glpi_config:/var/glpi/config
-      - ./plugins/solpi:/var/www/glpi/plugins/solpi
-      - ./plugins/solpi/webhook.php:/var/www/glpi/public/solpi-webhook.php
-      - ./plugins/solpi/test_public.php:/var/www/glpi/public/solpi-test.php
-      - ./plugins/solpi/import_public.php:/var/www/glpi/public/solpi-import.php
-      - ./plugins/solpi/public:/var/www/glpi/public/solpi
+      - ./plugins/solpi:/var/www/html/plugins/solpi
+      - ./plugins/solpi/webhook.php:/var/www/html/public/solpi-webhook.php
+      - ./plugins/solpi/test_public.php:/var/www/html/public/solpi-test.php
+      - ./plugins/solpi/import_public.php:/var/www/html/public/solpi-import.php
+      - ./plugins/solpi/public:/var/www/html/public/solpi
 
   postgres:
     image: postgres:16
