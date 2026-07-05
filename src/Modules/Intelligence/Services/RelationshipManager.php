@@ -17,6 +17,7 @@ final class RelationshipManager
     private \SOLPI\Modules\AI\Embeddings $embeddings;
     private SimilarityService $similarity;
     private DependencyResolver $dependencyResolver;
+    private AssetLookupService $assetLookup;
 
     public function __construct()
     {
@@ -25,6 +26,55 @@ final class RelationshipManager
         $this->embeddings = new \SOLPI\Modules\AI\Embeddings();
         $this->similarity = new SimilarityService();
         $this->dependencyResolver = new DependencyResolver();
+        $this->assetLookup = new AssetLookupService();
+    }
+
+    /**
+     * Mapeia um alerta do Zabbix no Grafo
+     */
+    public function indexZabbixAlert(array $alertData): void
+    {
+        $alertId = "Alert:" . ($alertData['id'] ?? uniqid());
+
+        // 1. Cria nó do Alerta
+        $this->repository->upsertNode($alertId, 'ZabbixAlert', $alertData['trigger_name'], [
+            'severity' => $alertData['severity'],
+            'host'     => $alertData['host']
+        ]);
+
+        // 2. Tenta localizar o Ativo no GLPI
+        $asset = $this->assetLookup->findByHost($alertData['host']);
+        if ($asset) {
+            $assetId = "{$asset['type']}:{$asset['id']}";
+
+            // Cria nó do ativo e relaciona
+            $this->repository->upsertNode($assetId, $asset['type']);
+            $this->repository->addEdge($alertId, $assetId, 'MONITORS', 1.0);
+
+            // 3. Expande dependências do Ativo
+            $this->discoverDependencies($asset['type'], $asset['id']);
+
+            // 4. Procura chamados abertos para este ativo ou dependentes
+            $this->linkRelatedTickets($assetId);
+        }
+    }
+
+    /**
+     * Tenta vincular chamados existentes ao ativo afetado
+     */
+    private function linkRelatedTickets(string $assetId): void
+    {
+        // Busca chamados abertos que afetam este ativo
+        [$type, $id] = explode(':', $assetId);
+
+        $tickets = $this->db->table('glpi_items_tickets')
+            ->where(['items_id' => $id, 'itemtype' => $type])
+            ->get();
+
+        foreach ($tickets as $t) {
+            $ticketId = "Ticket:" . $t['tickets_id'];
+            $this->repository->addEdge($assetId, $ticketId, 'HAS_TICKET', 1.0);
+        }
     }
 
     /**

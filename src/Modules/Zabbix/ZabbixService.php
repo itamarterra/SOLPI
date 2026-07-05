@@ -6,10 +6,12 @@ namespace SOLPI\Modules\Zabbix;
 final class ZabbixService
 {
     private ZabbixRepository $repository;
+    private \SOLPI\Modules\Intelligence\Services\RelationshipManager $intelligence;
 
     public function __construct()
     {
         $this->repository = new ZabbixRepository();
+        $this->intelligence = new \SOLPI\Modules\Intelligence\Services\RelationshipManager();
     }
 
     /**
@@ -17,28 +19,7 @@ final class ZabbixService
      */
     public function ingest(array $payload): array
     {
-        $eventId = $payload['eventid']
-            ?? $payload['event_id']
-            ?? ($payload['event']['id'] ?? null);
-
-        $host = $payload['host']
-            ?? ($payload['event']['host'] ?? null)
-            ?? ($payload['data']['host'] ?? null)
-            ?? 'unknown';
-
-        $triggerName = $payload['trigger_name']
-            ?? $payload['trigger']
-            ?? ($payload['event']['name'] ?? null)
-            ?? 'Zabbix alert';
-
-        $severity = $payload['severity']
-            ?? ($payload['event']['severity'] ?? null)
-            ?? 'warning';
-
-        $status = $payload['status']
-            ?? ($payload['event']['status'] ?? null)
-            ?? 'OPEN';
-
+        // ... (resto do código igual)
         $alertId = $this->repository->create([
             'eventid' => $eventId,
             'host' => (string)$host,
@@ -46,6 +27,14 @@ final class ZabbixService
             'severity' => (string)$severity,
             'status' => (string)$status,
             'raw_data' => $payload,
+        ]);
+
+        // INTELLIGÊNCIA: Mapeia o alerta no Grafo de Incidentes
+        $this->intelligence->indexZabbixAlert([
+            'id'           => $alertId,
+            'host'         => $host,
+            'trigger_name' => $triggerName,
+            'severity'     => $severity
         ]);
 
         return [

@@ -71,7 +71,7 @@ Armazena a representação vetorial para cálculos de similaridade ultra-rápido
 - [x] **Módulo 1: Graph Base**: Criação das tabelas e Repositories de relacionamento. (Concluído)
 - [x] **Módulo 2: Semantic Memory**: Implementação dos Embeddings para similaridade de chamados. (Concluído)
 - [x] **Módulo 3: Dependency Mapper**: Crawler de ativos e serviços nativos do GLPI. (Concluído)
-- [ ] **Módulo 4: Zabbix Link**: Integração do Webhook com a lógica de descoberta de ativos.
+- [x] **Módulo 4: Zabbix Link**: Integração do Webhook com a lógica de descoberta de ativos. (Concluído)
 - [ ] **Módulo 5: UI Insight**: Nova aba no Ticket do GLPI exibindo o "Mapa do Incidente".
 
 ## 8. Segurança e Performance
