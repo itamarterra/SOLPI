@@ -47,6 +47,11 @@ function plugin_init_solpi(): void
             'title' => 'SOLPI Explorer',
             'page'  => '/plugins/solpi/front/infrastructure.php',
             'icon'  => 'ti ti-topology-complex'
+        ],
+        'discovery' => [
+            'title' => 'SOLPI Discovery',
+            'page'  => '/plugins/solpi/front/discovery.php',
+            'icon'  => 'ti ti-search'
         ]
     ];
 
