@@ -77,7 +77,7 @@ Ao perguntar "Quem depende do SQL01?", a IA executará um *Traverser* no grafo d
 3.  **Fase 3 (Topology Engine)**: Lógica de vizinhança L2 (LLDP/CDP). (Concluído)
 4.  **Fase 4 (Digital Twin & Change)**: Sistema de snapshots e detecção de mudanças. (Concluído)
 5.  **Fase 5 (AI Logic)**: Interface de consulta em linguagem natural. (Concluído)
-6.  **Fase 6 (Visualizer)**: Mapas interativos (Físico, Lógico, Dependência).
+6.  **Fase 6 (Visualizer)**: Mapas interativos (Físico, Lógico, Dependência). (Concluído)
 4.  **Fase 4 (Digital Twin & Change)**: Sistema de snapshots e detecção de mudanças.
 5.  **Fase 5 (AI Logic)**: Interface de consulta em linguagem natural.
 6.  **Fase 6 (Visualizer)**: Mapas interativos (Físico, Lógico, Dependência).

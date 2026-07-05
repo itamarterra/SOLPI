@@ -39,13 +39,15 @@ function plugin_init_solpi(): void
     $PLUGIN_HOOKS['csrf_compliant']['solpi'] = true;
     $PLUGIN_HOOKS['menu_entry']['solpi'] = 'front/index.php';
     $PLUGIN_HOOKS['config_page']['solpi'] = 'front/config.php';
-    $PLUGIN_HOOKS['display_central']['solpi'] = 'plugin_solpi_display_central';
-    $importMenuFile = __DIR__ . '/src/Menu/ImportMenu.php';
-    if (is_file($importMenuFile)) {
-        require_once $importMenuFile;
-    }
+
+    // Adiciona menu de Infraestrutura ao SOLPI
     $PLUGIN_HOOKS['menu_toadd']['solpi'] = [
         'plugins' => SOLPI\Menu\ImportMenu::class,
+        'config'  => [
+            'title' => 'SOLPI Explorer',
+            'page'  => '/plugins/solpi/front/infrastructure.php',
+            'icon'  => 'ti ti-topology-complex'
+        ]
     ];
 
     $PLUGIN_HOOKS['add_tabs']['solpi'] = [
