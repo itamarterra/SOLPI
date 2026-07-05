@@ -64,7 +64,8 @@ Ao receber um alerta crítico, o RCE entra em modo "Real-time Insight":
 ## 7. Roadmap de Implementação
 
 - [x] **Módulo 1: Topology Traverser**: Implementação da busca recursiva em grafos. (Concluído)
-- [ ] **Módulo 2: Heuristic & Logic**: Criação das regras básicas de causa raiz (Rede, Storage, VM).
+- [x] **Módulo 2: Heuristic & Logic**: Criação das regras básicas de causa raiz (Rede, Storage, VM). (Concluído)
+- [ ] **Módulo 3: AI Insights**: Integração com OpenAI/Gemini para explicação textual da causa.
 - [ ] **Módulo 3: AI Insights**: Integração com OpenAI/Gemini para explicação textual da causa.
 - [ ] **Módulo 4: Impact Dashboard**: Painel visual de "Quem está sendo afetado agora".
 - [ ] **Módulo 5: Automatic Grouping**: Lógica de agrupamento de chamados duplicados por causa comum.
