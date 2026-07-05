@@ -8,7 +8,7 @@ if (!defined('GLPI_ROOT')) {
 
 /**
  * Carrega o autoload do SOLPI de forma segura (sem conflito com GLPI_ROOT).
- * Chamado dentro de cada funcao de hook para garantir as classes SOLPI.
+ * Chamado dentro de cada função de hook para garantir as classes SOLPI.
  */
 function solpi_load_autoload(): void
 {
@@ -24,8 +24,8 @@ function solpi_load_autoload(): void
 }
 
 /**
- * Hook: disparado quando o tecnico adiciona uma solucao ao ticket.
- * Equivale ao "Adicionar Solucao / Pedir Aprovacao" no GLPI.
+ * Hook: disparado quando o técnico adiciona uma solução ao ticket.
+ * Equivale ao "Adicionar Solução / Pedir Aprovação" no GLPI.
  * Envia mensagem WhatsApp SIM/NAO ao solicitante.
  */
 function plugin_solpi_on_solution_added(array $params): bool
@@ -77,11 +77,11 @@ function plugin_solpi_on_solution_added(array $params): bool
         $solution = trim(strip_tags($item->fields['content'] ?? 'Problema resolvido pelo suporte.'));
         $solution = mb_strimwidth($solution, 0, 200, '...');
 
-        $msg = "Ola! O seu chamado *#{$glpiTicketId}* foi resolvido pela equipe de suporte.\n\n"
-             . "*Solucao:* {$solution}\n\n"
+        $msg = "Olá! O seu chamado *#{$glpiTicketId}* foi resolvido pela equipe de suporte.\n\n"
+             . "*Solução:* {$solution}\n\n"
              . "O problema foi resolvido?\n\n"
              . "*SIM* — confirmar e encerrar o chamado\n"
-             . "*NAO* — continuar o atendimento";
+             . "*NÃO* — continuar o atendimento";
 
         $evolution->sendText($phone, $msg);
 
@@ -100,7 +100,7 @@ function plugin_solpi_on_solution_added(array $params): bool
 }
 
 /**
- * Fallback: mudanca manual de status para Resolvido (sem solucao via ITILSolution).
+ * Fallback: mudança manual de status para Resolvido (sem solução via ITILSolution).
  */
 function plugin_solpi_on_ticket_update(array $params): bool
 {
@@ -145,10 +145,10 @@ function plugin_solpi_on_ticket_update(array $params): bool
             $config->get('evolution', [])
         );
 
-        $msg = "Ola! O seu chamado *#{$glpiTicketId}* foi resolvido pela equipe de suporte.\n\n"
+        $msg = "Olá! O seu chamado *#{$glpiTicketId}* foi resolvido pela equipe de suporte.\n\n"
              . "O problema foi resolvido?\n\n"
              . "*SIM* — confirmar e encerrar o chamado\n"
-             . "*NAO* — continuar o atendimento";
+             . "*NÃO* — continuar o atendimento";
 
         $evolution->sendText($phone, $msg);
 

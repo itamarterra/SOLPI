@@ -2,608 +2,427 @@
 
 declare(strict_types=1);
 
-require_once '/var/www/glpi/vendor/autoload.php';
-require_once '/var/glpi/config/config_db.php';
-require_once '/var/www/glpi/plugins/solpi/vendor/autoload.php';
+/**
+ * SOLPI - Janela de Importação Profissional
+ * Versão 3.0 Pro - Estável & Segura
+ */
 
-use Ramsey\Uuid\Uuid;
-use SOLPI\Companies\Entities\Company;
-use SOLPI\Companies\Repositories\CompanyRepository;
+// 1. Localização da Raiz do GLPI
+// Se rodar via public/solpi-import.php, a raiz é o pai.
+$root = dirname(__DIR__);
+if (!file_exists($root . '/inc/includes.php')) {
+    $root = '/var/www/glpi';
+}
+
+require_once $root . '/vendor/autoload.php';
+
+// Inicializa o Kernel do GLPI 10 para definir constantes e ambiente
+if (class_exists('Glpi\\Kernel\\Kernel')) {
+    $glpi_kernel = new \Glpi\Kernel\Kernel();
+    $glpi_kernel->boot();
+    if (method_exists('Config', 'loadLegacyConfiguration')) {
+        Config::loadLegacyConfiguration();
+    }
+}
+
+require_once $root . '/inc/includes.php';
+
+// 2. Carrega dependências do plugin
+$loader = $root . '/plugins/solpi/vendor/autoload.php';
+if (file_exists($loader)) {
+    require_once $loader;
+}
+
+// 3. Verifica Sessão de forma segura
+if (Session::getLoginUserID() === false) {
+    // Se não estiver logado, redireciona ou avisa de forma amigável via GLPI
+    Html::header("Acesso Negado", $_SERVER['PHP_SELF']);
+    echo "<div class='container text-center mt-5'><div class='alert alert-warning'><h3>Sessão não encontrada.</h3><p>Por favor, faça login no GLPI e tente novamente.</p></div></div>";
+    Html::footer();
+    exit;
+}
+
 use SOLPI\Knowledge\Parsers\ExcelParser;
 use SOLPI\Knowledge\Services\ColumnDetector;
-use SOLPI\Users\Entities\User;
-use SOLPI\Users\Repositories\UserRepository;
 
-global $DB;
-$DB = new DB();
+$uploadDir = $root . "/files/_tmp/solpi_import/";
+if (!is_dir($uploadDir)) { @mkdir($uploadDir, 0777, true); }
 
-$uploadDir = sys_get_temp_dir() . '/solpi_import/';
-is_dir($uploadDir) || mkdir($uploadDir, 0777, true);
-
-function solpi_import_public_normalize_text(string $text): string
-{
-    $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-    $text = str_replace(["\r\n", "\r"], "\n", $text);
-
-    return trim($text);
+// --- Funções Auxiliares ---
+function solpi_is_safe_url($url) {
+    $parts = parse_url($url);
+    if (!$parts || !isset($parts['host'])) return false;
+    $ip = gethostbyname($parts['host']);
+    // Bloqueia localhost, IPs privados e reservados
+    return !preg_match('/^(127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|169\.254\.)/', $ip);
 }
 
-function solpi_import_public_html_table_to_tsv(string $html): string
-{
-    if (!class_exists(DOMDocument::class)) {
-        return $html;
-    }
-
-    $document = new DOMDocument();
-    libxml_use_internal_errors(true);
-    $document->loadHTML('<?xml encoding="UTF-8">' . $html);
-    libxml_clear_errors();
-
-    $lines = [];
-    foreach ($document->getElementsByTagName('tr') as $rowNode) {
-        $cells = [];
-        foreach ($rowNode->childNodes as $cellNode) {
-            if (!in_array($cellNode->nodeName, ['td', 'th'], true)) {
-                continue;
-            }
-
-            $cells[] = trim(preg_replace('/\s+/', ' ', $cellNode->textContent) ?? '');
-        }
-
-        if ($cells !== []) {
-            $lines[] = implode("\t", $cells);
-        }
-    }
-
-    return implode("\n", $lines);
+function solpi_fetch($url) {
+    if (!solpi_is_safe_url($url)) return "Erro: URL não permitida por motivos de segurança.";
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_FOLLOWLOCATION=>true, CURLOPT_TIMEOUT=>10, CURLOPT_MAXREDIRS=>3]);
+    $r = curl_exec($ch); curl_close($ch);
+    return $r;
 }
 
-function solpi_import_public_detect_delimiter(string $line): string
-{
-    $candidates = ["\t", ';', ',', '|'];
-    $best = "\t";
-    $bestCount = -1;
-
-    foreach ($candidates as $candidate) {
-        $count = substr_count($line, $candidate);
-        if ($count > $bestCount) {
-            $best = $candidate;
-            $bestCount = $count;
-        }
+function solpi_parse($txt) {
+    $txt = trim($txt); if(!$txt) return [];
+    if (str_starts_with($txt, 'Erro:')) return []; // Trata falha de fetch
+    if (stripos($txt, '<table') !== false) {
+        $txt = preg_replace('/<\/tr>/i', "\n", $txt);
+        $txt = str_replace(['</td>','</th>'], "\t", strip_tags($txt, '<td><th>'));
+        $txt = strip_tags($txt);
     }
-
-    return $best;
+    $lines = array_values(array_filter(explode("\n", str_replace("\r", "", $txt))));
+    if(!$lines) return [];
+    $sep = str_contains($lines[0], "\t") ? "\t" : (str_contains($lines[0], ";") ? ";" : ",");
+    $head = array_map('trim', str_getcsv(array_shift($lines), $sep));
+    $res = [];
+    foreach($lines as $l) {
+        $data = str_getcsv($l, $sep); $row = [];
+        foreach($head as $i=>$h) { $row[$h] = trim((string)($data[$i]??'')); }
+        if(array_filter($row)) $res[] = $row;
+    }
+    return $res;
 }
-
-function solpi_import_public_parse_delimited_text(string $text): array
-{
-    $text = solpi_import_public_normalize_text($text);
-    if ($text === '') {
-        return [];
-    }
-
-    if (stripos($text, '<table') !== false && stripos($text, '</table>') !== false) {
-        $text = solpi_import_public_html_table_to_tsv($text);
-    }
-
-    $lines = preg_split('/\n+/', $text) ?: [];
-    $lines = array_values(array_filter($lines, static fn(string $line): bool => trim($line) !== ''));
-    if ($lines === []) {
-        return [];
-    }
-
-    $delimiter = solpi_import_public_detect_delimiter($lines[0]);
-    $headers = array_map(static fn(string $value): string => trim($value), str_getcsv((string) array_shift($lines), $delimiter));
-    $rows = [];
-
-    foreach ($lines as $line) {
-        $values = str_getcsv($line, $delimiter);
-        $row = [];
-
-        foreach ($headers as $index => $header) {
-            if ($header === '') {
-                continue;
-            }
-
-            $row[$header] = trim((string) ($values[$index] ?? ''));
-        }
-
-        if ($row !== [] && array_filter($row, static fn(mixed $value): bool => trim((string) $value) !== '') !== []) {
-            $rows[] = $row;
-        }
-    }
-
-    return $rows;
-}
-
-function solpi_import_public_parse_source_file(string $tmpFile, string $originalName, ExcelParser $parser): array
-{
-    $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-
-    if (in_array($extension, ['csv', 'tsv', 'txt'], true)) {
-        $content = file_get_contents($tmpFile);
-        return solpi_import_public_parse_delimited_text($content === false ? '' : $content);
-    }
-
-    return $parser->parse($tmpFile);
-}
-
-function solpi_import_public_store_text_payload(string $text, string $uploadDir): array
-{
-    $normalized = solpi_import_public_normalize_text($text);
-    if ($normalized === '') {
-        return ['', ''];
-    }
-
-    $isHtmlTable = stripos($normalized, '<table') !== false && stripos($normalized, '</table>') !== false;
-    $content = $isHtmlTable ? solpi_import_public_html_table_to_tsv($normalized) : $normalized;
-    $suffix = str_contains($content, "\t") ? 'tsv' : 'csv';
-    $tmpFile = $uploadDir . uniqid('import_', true) . '.' . $suffix;
-    file_put_contents($tmpFile, $content);
-
-    return [$tmpFile, 'clipboard.' . $suffix];
-}
-
-function solpi_import_public_field_value(array $row, array $fieldMap, string $field): string
-{
-    $header = $fieldMap[$field] ?? '';
-    if ($header === '' || !array_key_exists($header, $row)) {
-        return '';
-    }
-
-    return trim((string) $row[$header]);
-}
-
-function solpi_import_public_reverse_mapping(array $mapping): array
-{
-    $fieldMap = [];
-    foreach ($mapping as $header => $field) {
-        $header = trim((string) $header);
-        $field = trim((string) $field);
-
-        if ($header !== '' && $field !== '') {
-            $fieldMap[$field] = $header;
-        }
-    }
-
-    return $fieldMap;
-}
-
-function solpi_import_public_resolve_company_id(string $companyName): array
-{
-    $companyName = trim($companyName);
-    if ($companyName === '') {
-        return ['id' => null, 'created' => false];
-    }
-
-    $repository = new CompanyRepository();
-    $existing = $repository->findBy(['name' => $companyName]);
-    if (is_array($existing) && isset($existing['id'])) {
-        return ['id' => (int) $existing['id'], 'created' => false];
-    }
-
-    $company = new Company(Uuid::uuid4()->toString(), $companyName);
-    $company->setSetting('source', 'solpi-import-public');
-
-    return ['id' => $repository->create($company), 'created' => true];
-}
-
-  function solpi_import_public_user_from_row(array $row): User
-  {
-    $uuid = trim((string) ($row['uuid'] ?? ''));
-    if ($uuid === '') {
-      $uuid = Uuid::uuid4()->toString();
-    }
-
-    $user = new User(
-      $uuid,
-      trim((string) ($row['name'] ?? ''))
-    );
-
-    if (isset($row['id'])) {
-      $user->setId((int) $row['id']);
-    }
-
-    if (!empty($row['email'])) {
-      $user->setEmail((string) $row['email']);
-    }
-    if (!empty($row['phone'])) {
-      $user->setPhone((string) $row['phone']);
-    }
-    if (!empty($row['department'])) {
-      $user->setDepartment((string) $row['department']);
-    }
-    if (!empty($row['position'])) {
-      $user->setPosition((string) $row['position']);
-    }
-    if (!empty($row['company_id'])) {
-      $user->setCompanyId((int) $row['company_id']);
-    }
-
-    return $user;
-  }
-
-  function solpi_import_public_resolve_user_id(string $name, ?string $email, ?string $phone, ?string $department, ?string $position, ?int $companyId): array
-  {
-    $name = trim($name);
-    $email = trim((string) $email);
-    $phone = trim((string) $phone);
-      $department = trim((string) $department);
-      $position = trim((string) $position);
-
-    if ($name === '' && $email === '' && $phone === '') {
-      return ['id' => null, 'created' => false];
-    }
-
-    $userName = $name !== '' ? $name : ($email !== '' ? $email : 'Contato ' . $phone);
-
-    $repository = new UserRepository();
-    $existing = null;
-
-    if ($email !== '') {
-      $existing = $repository->findByEmail($email);
-    }
-
-    if ($existing === null && $phone !== '') {
-      $existing = $repository->findByPhone($phone);
-    }
-
-    if ($existing === null && $name !== '') {
-      $existing = $repository->findByName($name);
-    }
-
-    if (is_array($existing) && isset($existing['id'])) {
-      $merged = $existing;
-      $merged['name'] = $name !== '' ? $name : (string) ($existing['name'] ?? $userName ?? '');
-
-      if ($email !== '') {
-        $merged['email'] = $email;
-      }
-      if ($phone !== '') {
-        $merged['phone'] = $phone;
-      }
-      if ($department !== '') {
-        $merged['department'] = $department;
-      }
-      if ($position !== '') {
-        $merged['position'] = $position;
-      }
-      if ($companyId !== null) {
-        $merged['company_id'] = $companyId;
-      }
-
-      $repository->update((int) $existing['id'], solpi_import_public_user_from_row($merged));
-
-      return ['id' => (int) $existing['id'], 'created' => false];
-    }
-
-    $user = new User(Uuid::uuid4()->toString(), $userName);
-
-    if ($email !== '') {
-      $user->setEmail($email);
-    }
-    if ($phone !== '') {
-      $user->setPhone($phone);
-    }
-    if ($department !== '') {
-      $user->setDepartment($department);
-    }
-    if ($position !== '') {
-      $user->setPosition($position);
-    }
-    if ($companyId !== null) {
-      $user->setCompanyId($companyId);
-    }
-    $user->setSetting('source', 'solpi-import-public');
-
-    return ['id' => $repository->create($user), 'created' => true];
-  }
 
 $step = $_GET['step'] ?? 'upload';
-$rows = [];
-$headers = [];
-$mapping = [];
-$preview = [];
-$message = '';
-$msgType = 'info';
-$tmpFile = '';
-$sourceName = '';
+$msg = ''; $rows = []; $headers = []; $mapping = []; $tmpFile = '';
 
+// AÇÃO: IMPORTAR
 if ($step === 'import' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $tmpFile = (string) ($_POST['tmp_file'] ?? '');
-    $sourceName = (string) ($_POST['source_name'] ?? '');
-    $mapping = is_array($_POST['mapping'] ?? null) ? $_POST['mapping'] : [];
-    $fieldMap = solpi_import_public_reverse_mapping($mapping);
-    $created = 0;
-    $companyCreated = 0;
-    $errors = [];
-
-    if ($tmpFile !== '' && file_exists($tmpFile)) {
-        $parser = new ExcelParser();
-        $rows = solpi_import_public_parse_source_file($tmpFile, $sourceName, $parser);
-
-        foreach ($rows as $index => $row) {
-            try {
-                $empresa = solpi_import_public_field_value($row, $fieldMap, 'empresa');
-                $nome = solpi_import_public_field_value($row, $fieldMap, 'nome');
-                $problema = solpi_import_public_field_value($row, $fieldMap, 'problema');
-                $telefone = solpi_import_public_field_value($row, $fieldMap, 'telefone');
-                $email = solpi_import_public_field_value($row, $fieldMap, 'email');
-                $department = solpi_import_public_field_value($row, $fieldMap, 'department');
-                $position = solpi_import_public_field_value($row, $fieldMap, 'position');
-                $categoria = solpi_import_public_field_value($row, $fieldMap, 'categoria');
-                $prioridade = solpi_import_public_field_value($row, $fieldMap, 'prioridade');
-
-                if ($problema === '') {
-                    continue;
-                }
-
-                $companyId = null;
-                if ($empresa !== '') {
-                    $companyResult = solpi_import_public_resolve_company_id($empresa);
-                    $companyId = $companyResult['id'];
-                    if (!empty($companyResult['created'])) {
-                        $companyCreated++;
-                    }
-                }
-
-                $userId = null;
-                if ($nome !== '' || $email !== '') {
-                  $userResult = solpi_import_public_resolve_user_id($nome, $email, $telefone, $department, $position, $companyId);
-                  $userId = $userResult['id'];
-                }
-
-                $title = ($nome !== '' ? $nome . ' - ' : '') . mb_strimwidth($problema, 0, 100, '...');
-                $content = $problema;
-                if ($empresa !== '') {
-                    $content .= "\n\nEmpresa: {$empresa}";
-                }
-                if ($nome !== '') {
-                    $content .= "\nSolicitante: {$nome}";
-                }
-                if ($telefone !== '') {
-                    $content .= "\nTelefone: {$telefone}";
-                }
-                if ($email !== '') {
-                    $content .= "\nEmail: {$email}";
-                }
-                if ($department !== '') {
-                  $content .= "\nDepartamento: {$department}";
-                }
-                if ($position !== '') {
-                  $content .= "\nCargo: {$position}";
-                }
-                if ($categoria !== '') {
-                    $content .= "\nCategoria: {$categoria}";
-                }
-
-                $now = date('Y-m-d H:i:s');
-                $DB->insert('glpi_tickets', [
-                    'entities_id' => 0,
-                    'name' => $DB->escape($title),
-                    'content' => $DB->escape('<p>' . nl2br(htmlspecialchars($content, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) . '</p>'),
-                    'date' => $now,
-                    'date_creation' => $now,
-                    'date_mod' => $now,
-                    'status' => 1,
-                    'type' => 1,
-                    'priority' => 3,
-                    'urgency' => 3,
-                    'impact' => 3,
-                    'requesttypes_id' => 1,
-                    'users_id_lastupdater' => 0,
-                    'is_deleted' => 0,
-                ]);
-
-                $glpiId = (int) $DB->insertId();
-                $DB->insert('glpi_plugin_solpi_tickets', [
-                    'glpi_ticket_id' => $glpiId,
-                    'company_id' => $companyId,
-                  'user_id' => $userId,
-                    'title' => $title,
-                    'description' => $content,
-                    'status' => 'OPEN',
-                    'priority' => $prioridade !== '' ? $prioridade : 'normal',
-                    'category' => $categoria !== '' ? $categoria : null,
-                    'metadata' => json_encode([
-                        'source_name' => $sourceName,
-                        'row_index' => $index + 2,
-                        'raw_row' => $row,
-                      'department' => $department,
-                      'position' => $position,
-                    ], JSON_UNESCAPED_UNICODE),
-                    'opened_at' => $now,
-                ]);
-
-                $created++;
-            } catch (Throwable $e) {
-                $errors[] = 'Linha ' . ($index + 2) . ': ' . $e->getMessage();
-            }
+    $mapping = array_flip(array_filter($_POST['mapping'] ?? []));
+    $targetFile = $_POST['tmp_file'] ?? '';
+    // Proteção contra Path Traversal
+    if ($targetFile && str_starts_with($targetFile, $uploadDir) && file_exists($targetFile)) {
+        $rows = (str_contains($targetFile, 'xl')) ? (new ExcelParser())->parse($targetFile) : solpi_parse(file_get_contents($targetFile));
+        $count = 0;
+        foreach ($rows as $r) {
+            $desc = $r[$mapping['problema'] ?? ''] ?? '';
+            if (!$desc) continue;
+            $ticket = new Ticket();
+            if ($ticket->add([
+                'name'                => mb_strimwidth($desc, 0, 70, '...'),
+                'content'             => $desc . "\n\n(Importado via SOLPI)",
+                'entities_id'         => $_SESSION['glpiactive_entity'] ?? 0,
+                'requesttypes_id'     => 1,
+                '_users_id_requester' => Session::getLoginUserID()
+            ])) $count++;
         }
-
-        @unlink($tmpFile);
-    }
-
-    $message = $created . ' chamados criados com sucesso!';
-    $msgType = 'success';
-    if ($companyCreated > 0) {
-        $message .= ' ' . $companyCreated . ' empresa(s) cadastrada(s) ou reaproveitada(s).';
-    }
-    if ($errors !== []) {
-        $message .= ' Erros: ' . implode('; ', $errors);
-    }
-    $step = 'done';
-}
-
-if ($step === 'preview') {
-    $pasteData = trim((string) ($_POST['paste_data'] ?? ''));
-    $uploadedFile = $_FILES['source_file'] ?? null;
-    $parser = new ExcelParser();
-    $detector = new ColumnDetector();
-
-    if ($pasteData !== '') {
-        [$tmpFile, $sourceName] = solpi_import_public_store_text_payload($pasteData, $uploadDir);
-        if ($tmpFile !== '') {
-            $rows = solpi_import_public_parse_source_file($tmpFile, $sourceName, $parser);
-        }
-    } elseif (is_array($uploadedFile) && (($uploadedFile['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK)) {
-        $sourceName = (string) ($uploadedFile['name'] ?? 'import.xlsx');
-        $extension = strtolower(pathinfo($sourceName, PATHINFO_EXTENSION));
-        $extension = $extension !== '' ? $extension : 'xlsx';
-        $tmpFile = $uploadDir . uniqid('import_', true) . '.' . $extension;
-
-        if (!move_uploaded_file((string) $uploadedFile['tmp_name'], $tmpFile)) {
-            $message = 'Não foi possível salvar o arquivo enviado.';
-            $msgType = 'danger';
-        } else {
-            $rows = solpi_import_public_parse_source_file($tmpFile, $sourceName, $parser);
-        }
+        @unlink($targetFile);
+        $msg = "Sucesso! $count chamados criados."; $step = 'done';
     } else {
-        $message = 'Selecione um arquivo ou cole os dados da planilha/site para analisar.';
-        $msgType = 'warning';
-    }
-
-    if ($rows !== []) {
-        $headers = array_keys($rows[0]);
-        $mapping = $detector->detect($headers);
-        $preview = array_slice($rows, 0, 5);
-        $message = sprintf('Foram detectadas %d linha(s) para análise.', count($rows));
-        $msgType = 'success';
+        $msg = "Erro: Arquivo temporário inválido ou expirado."; $step = 'upload';
     }
 }
 
+// AÇÃO: ANALISAR
+if ($step === 'preview') {
+    $paste = $_POST['paste_data'] ?? '';
+    $file = $_FILES['source_file'] ?? null;
+    try {
+        if ($paste) {
+            if (filter_var($paste, FILTER_VALIDATE_URL)) {
+                $paste = solpi_fetch($paste);
+                if (str_starts_with($paste, 'Erro:')) throw new Exception($paste);
+            }
+            $tmpFile = $uploadDir . uniqid('sp_') . '.txt';
+            file_put_contents($tmpFile, $paste);
+            $rows = solpi_parse($paste);
+        } elseif ($file && $file['error'] === 0) {
+            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+            if (!in_array(strtolower($ext), ['csv', 'xls', 'xlsx', 'txt', 'tsv'])) {
+                throw new Exception("Tipo de arquivo não permitido.");
+            }
+            $tmpFile = $uploadDir . uniqid('sp_') . '.' . $ext;
+            move_uploaded_file($file['tmp_name'], $tmpFile);
+            $rows = (str_contains($tmpFile, 'xl')) ? (new ExcelParser())->parse($tmpFile) : solpi_parse(file_get_contents($tmpFile));
+        }
+        if ($rows) {
+            $headers = array_keys($rows[0]);
+            $mapping = (new ColumnDetector())->detect($headers);
+        } else { $msg = "Nenhum dado encontrado."; $step = "upload"; }
+    } catch (Throwable $e) { $msg = "Erro: " . $e->getMessage(); $step = "upload"; }
+}
+
+Html::header("SOLPI Import", $_SERVER['PHP_SELF']);
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Janela de Importação SOLPI</title>
-<link rel="stylesheet" href="/lib/base.min.css">
 <style>
-body{padding:20px;background:#f4f6f9}
-.card{border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
-.dropzone{border:2px dashed #4f8df5;border-radius:1rem;background:#f8fbff;min-height:220px;display:flex;align-items:center;justify-content:center;text-align:center;padding:1.5rem;cursor:pointer}
-.dropzone.dragover{border-color:#0d6efd;background:#eef5ff}
+    :root {
+        --solpi-primary: #4f46e5;
+        --solpi-primary-hover: #4338ca;
+        --solpi-bg: #f9fafb;
+        --solpi-card-bg: #ffffff;
+        --solpi-text: #111827;
+        --solpi-text-muted: #6b7280;
+        --solpi-border: #e5e7eb;
+        --solpi-input-bg: #ffffff;
+        --solpi-card-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --solpi-card-shadow-hover: 0 25px 50px -12px rgb(0 0 0 / 0.08);
+        --solpi-radius: 1rem;
+    }
+    [data-theme="dark"] {
+        --solpi-bg: #030712;
+        --solpi-card-bg: #111827;
+        --solpi-text: #f9fafb;
+        --solpi-text-muted: #9ca3af;
+        --solpi-border: #1f2937;
+        --solpi-input-bg: #030712;
+        --solpi-card-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+        --solpi-card-shadow-hover: 0 25px 50px -12px rgb(0 0 0 / 0.5);
+    }
+    body { background-color: var(--solpi-bg) !important; color: var(--solpi-text) !important; font-family: 'Inter', system-ui, -apple-system, sans-serif; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .solpi-container { max-width: 1100px; margin: 3rem auto; padding: 0 1.5rem; }
+    
+    .card { background-color: var(--solpi-card-bg) !important; color: var(--solpi-text) !important; border-radius: var(--solpi-radius) !important; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid var(--solpi-border) !important; }
+    .card-shadow { box-shadow: var(--solpi-card-shadow); }
+    .card-shadow:hover { box-shadow: var(--solpi-card-shadow-hover); transform: translateY(-4px); }
+    
+    .btn-primary { background: linear-gradient(135deg, var(--solpi-primary), #6366f1) !important; border: none !important; border-radius: var(--solpi-radius) !important; padding: 0.8rem 2rem !important; font-weight: 600 !important; transition: all 0.3s; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2) !important; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3) !important; opacity: 0.95; }
+    
+    .upload-area { border: 2px dashed var(--solpi-border) !important; border-radius: var(--solpi-radius) !important; padding: 4rem 2rem !important; background: var(--solpi-input-bg) !important; transition: all 0.3s; cursor: pointer; position: relative; overflow: hidden; }
+    .upload-area:hover { border-color: var(--solpi-primary) !important; background: rgba(79, 70, 229, 0.02) !important; }
+    .upload-area::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(45deg, transparent, rgba(79, 70, 229, 0.05), transparent); transform: translateX(-100%); transition: 0.6s; }
+    .upload-area:hover::after { transform: translateX(100%); }
+    
+    .form-control, .form-select { background-color: var(--solpi-input-bg) !important; color: var(--solpi-text) !important; border-radius: 0.75rem !important; padding: 0.75rem 1rem !important; border: 1px solid var(--solpi-border) !important; transition: all 0.2s; }
+    .form-control:focus, .form-select:focus { box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1) !important; border-color: var(--solpi-primary) !important; outline: none; }
+    
+    /* Stepper */
+    .solpi-stepper { display: flex; justify-content: space-between; margin-bottom: 3.5rem; position: relative; }
+    .solpi-stepper::before { content: ''; position: absolute; top: 1.25rem; left: 0; width: 100%; height: 2px; background: var(--solpi-border); z-index: 1; }
+    .step-item { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; width: 33.33%; }
+    .step-dot { width: 2.5rem; height: 2.5rem; background: var(--solpi-card-bg); border: 2px solid var(--solpi-border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; margin-bottom: 0.75rem; transition: all 0.3s; color: var(--solpi-text-muted); }
+    .step-item.active .step-dot { border-color: var(--solpi-primary); background: var(--solpi-primary); color: white; box-shadow: 0 0 0 5px rgba(79, 70, 229, 0.15); }
+    .step-item.completed .step-dot { border-color: #10b981; background: #10b981; color: white; }
+    .step-label { font-size: 0.75rem; font-weight: 700; color: var(--solpi-text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .step-item.active .step-label { color: var(--solpi-primary); }
+    
+    .table thead th { background-color: rgba(100, 116, 139, 0.05) !important; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.1em; color: var(--solpi-text-muted); padding: 1rem !important; border-bottom: 1px solid var(--solpi-border) !important; }
+    .table td { padding: 1rem !important; border-bottom: 1px solid var(--solpi-border) !important; font-size: 0.85rem; }
+    
+    .theme-toggle { cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; transition: all 0.3s; background: var(--solpi-input-bg); border: 1px solid var(--solpi-border); color: var(--solpi-text); }
+    .theme-toggle:hover { background: var(--solpi-border); transform: rotate(12deg); }
+    
+    #loader-box { backdrop-filter: blur(8px); background: rgba(15, 23, 42, 0.8) !important; }
+    .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
 </style>
-</head>
-<body>
-<div class="container-fluid" style="max-width:1180px;margin:auto">
-  <div class="d-flex align-items-center mb-4 gap-2">
-    <h3 class="mb-0">📥 Janela de Importação SOLPI</h3>
-    <a href="/front/ticket.php" class="btn btn-sm btn-outline-secondary ms-auto">Ver Chamados no GLPI</a>
-  </div>
 
-<?php if ($message): ?>
-  <div class="alert alert-<?=$msgType?>"><?=htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')?></div>
-<?php endif; ?>
-
-<?php if ($step === 'done'): ?>
-  <div class="card p-4 text-center">
-    <h4>✅ Importação concluída!</h4>
-    <a href="/solpi-import.php" class="btn btn-primary mt-3">Nova Importação</a>
-    <a href="/front/ticket.php" class="btn btn-success mt-3 ms-2">Ver Chamados no GLPI</a>
-  </div>
-
-<?php elseif ($step === 'preview' && $rows): ?>
-  <form method="post" action="/solpi-import.php?step=import">
-    <input type="hidden" name="tmp_file" value="<?=htmlspecialchars($tmpFile ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')?>">
-    <input type="hidden" name="source_name" value="<?=htmlspecialchars($sourceName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')?>">
-
-    <div class="card mb-4 p-3">
-      <h5>🗂 Mapeamento de Colunas <small class="text-muted">(<?=count($rows)?> linhas)</small></h5>
-      <table class="table table-sm table-bordered mt-2" style="max-width:760px">
-        <tr><th>Coluna de origem</th><th>Campo SOLPI</th></tr>
-        <?php foreach ($headers as $col): ?>
-        <tr>
-          <td><?=htmlspecialchars($col, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')?></td>
-          <td>
-            <select name="mapping[<?=htmlspecialchars($col, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')?>]" class="form-select form-select-sm">
-              <option value="">— ignorar —</option>
-              <?php foreach (['empresa','nome','telefone','email','department','position','problema','prioridade','categoria','local','tecnico','status'] as $f): ?>
-              <option value="<?=$f?>" <?=($mapping[$col]??'')===$f?'selected':''?>><?=$f?></option>
-              <?php endforeach; ?>
-            </select>
-          </td>
-        </tr>
-        <?php endforeach; ?>
-      </table>
-    </div>
-
-    <div class="card mb-4 p-3" style="overflow-x:auto">
-      <h5>👁 Preview (5 primeiras linhas)</h5>
-      <table class="table table-sm table-striped table-bordered mt-2">
-        <thead><tr><?php foreach ($headers as $h): ?><th><?=htmlspecialchars($h, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')?></th><?php endforeach; ?></tr></thead>
-        <tbody>
-          <?php foreach ($preview as $r): ?>
-            <tr><?php foreach ($headers as $h): ?><td><?=htmlspecialchars(mb_strimwidth((string)($r[$h] ?? ''),0,40,'...'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')?></td><?php endforeach; ?></tr>
-          <?php endforeach; ?>
-        </tbody>
-      </table>
-    </div>
-
-    <button type="submit" class="btn btn-success btn-lg">✅ Importar <?=count($rows)?> chamados</button>
-    <a href="/solpi-import.php" class="btn btn-secondary ms-2">Cancelar</a>
-  </form>
-
-<?php else: ?>
-  <div class="row g-4">
-    <div class="col-lg-6">
-      <div class="card p-4 h-100">
-        <form method="post" action="/solpi-import.php?step=preview" enctype="multipart/form-data" id="solpi-public-file-form">
-          <h5>Arraste e solte o arquivo</h5>
-          <div class="dropzone mb-3" id="solpi-public-dropzone">
-            <div>
-              <div class="fw-bold mb-2">Solte aqui a planilha ou arquivo CSV</div>
-              <div class="text-muted">Suporta .xlsx, .xls, .csv, .tsv e .txt.</div>
+<div class="solpi-container">
+    <header class="d-flex align-items-center justify-content-between mb-5">
+        <div class="d-flex align-items-center">
+            <div class="bg-primary bg-opacity-10 p-3 rounded-4 me-3" style="box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.2);">
+                <i class="bi bi-layers-half fs-2 text-primary"></i>
             </div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label fw-bold">Arquivo</label>
-            <input type="file" name="source_file" id="solpi-public-file" class="form-control" accept=".xlsx,.xls,.csv,.tsv,.txt">
-          </div>
-          <button type="submit" class="btn btn-primary btn-lg">Analisar arquivo</button>
-        </form>
-      </div>
+            <div>
+                <h2 class="fw-black mb-0" style="letter-spacing: -0.04em; color: var(--solpi-text);">SOLPI <span class="text-primary">IMPORT</span></h2>
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-10 me-2" style="font-size: 0.65rem;">v5.0 PRO</span>
+                    <p class="small mb-0" style="color: var(--solpi-text-muted); font-weight: 500;">Sistema de Processamento Inteligente</p>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex align-items-center">
+            <button id="theme-toggle" class="theme-toggle" title="Alternar modo visual">
+                <i class="bi bi-moon-stars-fill" id="theme-icon"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="solpi-stepper">
+        <div class="step-item <?=($step==='upload'?'active':($step==='preview'||$step==='done'?'completed':''))?>">
+            <div class="step-dot"><?=($step==='preview'||$step==='done'?'<i class="bi bi-check"></i>':'1')?></div>
+            <div class="step-label">Upload</div>
+        </div>
+        <div class="step-item <?=($step==='preview'?'active':($step==='done'?'completed':''))?>">
+            <div class="step-dot"><?=($step==='done'?'<i class="bi bi-check"></i>':'2')?></div>
+            <div class="step-label">Mapeamento</div>
+        </div>
+        <div class="step-item <?=($step==='done'?'active':'')?>">
+            <div class="step-dot">3</div>
+            <div class="step-label">Concluído</div>
+        </div>
     </div>
 
-    <div class="col-lg-6">
-      <div class="card p-4 h-100">
-        <form method="post" action="/solpi-import.php?step=preview" id="solpi-public-paste-form">
-          <h5>Cole dados de planilha ou site</h5>
-          <div class="mb-3">
-            <textarea name="paste_data" class="form-control" style="min-height:220px;font-family:ui-monospace,monospace" placeholder="Cole aqui uma tabela, CSV ou texto tabular"></textarea>
-          </div>
-          <button type="submit" class="btn btn-success btn-lg">Analisar dados colados</button>
-        </form>
-      </div>
-    </div>
-  </div>
-<?php endif; ?>
+    <?php if ($msg): ?>
+        <div class="alert border-0 card-shadow mb-5 d-flex align-items-center py-4 px-4" style="border-left: 5px solid #10b981 !important; background: var(--solpi-card-bg); color: var(--solpi-text);">
+            <div class="bg-success bg-opacity-10 p-2 rounded-circle me-3">
+                <i class="bi bi-check2-circle fs-4 text-success"></i> 
+            </div>
+            <span class="fw-semibold"><?=$msg?></span>
+        </div>
+    <?php endif; ?>
 
+    <?php if ($step === 'done'): ?>
+        <div class="card p-5 text-center card-shadow border-0" style="background: linear-gradient(to bottom right, var(--solpi-card-bg), rgba(16, 185, 129, 0.02)) !important;">
+            <div class="mb-4">
+                <div class="bg-success bg-opacity-10 p-4 rounded-circle d-inline-block shadow-sm">
+                    <i class="bi bi-rocket-takeoff text-success" style="font-size: 3.5rem;"></i>
+                </div>
+            </div>
+            <h2 class="fw-black mb-2" style="letter-spacing: -0.02em;">IMPORTAÇÃO CONCLUÍDA</h2>
+            <p style="color: var(--solpi-text-muted); font-size: 1.1rem;" class="mb-5">Os dados foram processados com sucesso e os chamados já estão disponíveis no GLPI.</p>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="/solpi-import.php" class="btn btn-primary px-5 py-3 shadow">
+                    <i class="bi bi-plus-lg me-2"></i>Nova Importação
+                </a>
+                <a href="/front/ticket.php" class="btn btn-outline-secondary px-5 py-3 border-2 fw-bold" style="border-radius: var(--solpi-radius);">
+                    <i class="bi bi-list-task me-2"></i>Ver Chamados
+                </a>
+            </div>
+        </div>
+
+    <?php elseif ($step === 'preview' && $rows): ?>
+        <form method="post" action="/solpi-import.php?step=import" onsubmit="document.getElementById('loader-box').style.display='flex'">
+            <input type="hidden" name="tmp_file" value="<?=$tmpFile?>">
+            <input type="hidden" name="source_name" value="<?=$_POST['source_name'] ?? 'Planilha'?>">
+            
+            <div class="card card-shadow mb-4 overflow-hidden border-0">
+                <div class="card-header bg-transparent border-0 p-4 d-flex align-items-center justify-content-between">
+                    <div>
+                        <h5 class="fw-bold mb-1"><i class="bi bi-bezier2 me-2 text-primary"></i> Configuração de Mapeamento</h5>
+                        <p class="text-muted small mb-0">Relacione as colunas detectadas com os campos oficiais do GLPI.</p>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-lightning-fill me-2"></i> Executar Processamento
+                    </button>
+                </div>
+                
+                <div class="p-4 bg-light bg-opacity-50" style="border-top: 1px solid var(--solpi-border); border-bottom: 1px solid var(--solpi-border);">
+                    <div class="row g-4">
+                        <?php foreach ($headers as $h): ?>
+                            <div class="col-md-4">
+                                <div class="p-3 rounded-3 bg-white border card-shadow-hover transition-all" style="background: var(--solpi-input-bg) !important;">
+                                    <label class="small fw-bold mb-2 d-flex align-items-center" style="color: var(--solpi-text-muted);">
+                                        <i class="bi bi-table me-2"></i> <?=$h?>
+                                    </label>
+                                    <select name="mapping[<?=$h?>]" class="form-select border-0 shadow-sm" style="background-color: var(--solpi-bg) !important;">
+                                        <option value="">(Ignorar coluna)</option>
+                                        <option value="problema" <?=($mapping[$h]??'')==='problema'?'selected':''?>>Descrição do Problema</option>
+                                        <option value="nome" <?=($mapping[$h]??'')==='nome'?'selected':''?>>Solicitante</option>
+                                    </select>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <div class="p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-eye me-2 text-primary"></i> Prévia dos Dados</h6>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary ms-2"><?=count($rows)?> registros encontrados</span>
+                    </div>
+                    <div class="table-responsive rounded-3 border">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr><?php foreach($headers as $h) echo "<th>$h</th>"; ?></tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach(array_slice($rows,0,5) as $r): ?>
+                                    <tr>
+                                        <?php foreach($headers as $h) {
+                                            $val = (string)($r[$h]??'');
+                                            echo "<td>".mb_strimwidth($val,0,60,'...')."</td>";
+                                        } ?>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+    <?php else: ?>
+        <div class="row g-4">
+            <div class="col-md-7">
+                <div class="card p-5 h-100 card-shadow text-center border-0">
+                    <div class="mb-4">
+                        <i class="bi bi-file-earmark-arrow-up text-primary" style="font-size: 4rem; opacity: 0.8;"></i>
+                    </div>
+                    <h4 class="fw-bold mb-2">Importar Arquivo</h4>
+                    <p style="color: var(--solpi-text-muted);" class="mb-5">Suporte nativo para Excel (XLSX, XLS) e arquivos CSV.</p>
+                    
+                    <div class="upload-area mb-4 shadow-sm" onclick="document.getElementById('fIn').click()">
+                        <div class="bg-primary bg-opacity-10 p-4 rounded-circle d-inline-block mb-3">
+                            <i class="bi bi-cloud-upload-fill text-primary fs-2"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">Arraste ou Clique</h5>
+                        <p style="color: var(--solpi-text-muted);" class="small mb-0">Selecione o arquivo para análise imediata</p>
+                    </div>
+                    
+                    <form method="post" action="/solpi-import.php?step=preview" enctype="multipart/form-data" id="fForm">
+                        <input type="file" name="source_file" id="fIn" class="d-none" onchange="document.getElementById('fForm').submit()">
+                    </form>
+                    
+                    <div class="d-flex justify-content-center gap-4 py-3 border-top mt-2" style="border-color: var(--solpi-border) !important;">
+                        <div class="text-center">
+                            <i class="bi bi-filetype-exe fs-4 text-muted mb-1 d-block"></i>
+                            <span class="small fw-bold text-muted">EXCEL</span>
+                        </div>
+                        <div class="text-center">
+                            <i class="bi bi-filetype-csv fs-4 text-muted mb-1 d-block"></i>
+                            <span class="small fw-bold text-muted">CSV</span>
+                        </div>
+                        <div class="text-center">
+                            <i class="bi bi-table fs-4 text-muted mb-1 d-block"></i>
+                            <span class="small fw-bold text-muted">TSV</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="card p-5 h-100 card-shadow border-0" style="background: linear-gradient(135deg, var(--solpi-card-bg), rgba(37, 99, 235, 0.02)) !important;">
+                    <h4 class="fw-bold mb-3"><i class="bi bi-clipboard-data me-2 text-primary"></i>Entrada Direta</h4>
+                    <p style="color: var(--solpi-text-muted);" class="small mb-4">Cole dados tabulares ou uma URL de planilha pública.</p>
+                    
+                    <form method="post" action="/solpi-import.php?step=preview" class="h-100 d-flex flex-column">
+                        <textarea name="paste_data" class="form-control mb-4 flex-grow-1 shadow-sm" 
+                                  style="min-height: 200px; resize: none; background-color: var(--solpi-input-bg) !important; border: 1px solid var(--solpi-border) !important;" 
+                                  placeholder="Cole as colunas aqui ou a URL do arquivo..."></textarea>
+                        <button type="submit" class="btn btn-primary w-100 py-3 shadow-lg">
+                            <i class="bi bi-cpu-fill me-2"></i>Analisar com IA
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 </div>
+
+<div id="loader-box" style="position: fixed; top:0; left:0; width:100%; height:100%; z-index:9999; display:none; align-items:center; justify-content:center; flex-direction: column;">
+    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+    <h5 class="mt-4 fw-bold">Processando seus dados...</h5>
+    <p class="text-muted">Isso pode levar alguns segundos.</p>
+</div>
+
 <script>
-(function () {
-  const fileInput = document.getElementById('solpi-public-file');
-  const dropzone = document.getElementById('solpi-public-dropzone');
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    const html = document.documentElement;
 
-  if (dropzone && fileInput) {
-    dropzone.addEventListener('click', () => fileInput.click());
-    dropzone.addEventListener('dragover', (event) => {
-      event.preventDefault();
-      dropzone.classList.add('dragover');
-    });
-    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-    dropzone.addEventListener('drop', (event) => {
-      event.preventDefault();
-      dropzone.classList.remove('dragover');
+    // Função para definir o tema
+    const setTheme = (theme) => {
+        html.setAttribute('data-theme', theme);
+        localStorage.setItem('solpi-theme', theme);
+        if (theme === 'dark') {
+            themeIcon.classList.replace('bi-moon-stars-fill', 'bi-sun-fill');
+        } else {
+            themeIcon.classList.replace('bi-sun-fill', 'bi-moon-stars-fill');
+        }
+    };
 
-      if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length > 0) {
-        fileInput.files = event.dataTransfer.files;
-      }
+    // Inicialização
+    const savedTheme = localStorage.getItem('solpi-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    setTheme(savedTheme);
+
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = html.getAttribute('data-theme');
+        setTheme(currentTheme === 'dark' ? 'light' : 'dark');
     });
-  }
-})();
 </script>
+
 </body>
 </html>
+<?php Html::footer(); ?>

@@ -17,8 +17,8 @@ function plugin_version_solpi(): array
         'homepage'       => '',
         'requirements'   => [
             'glpi' => [
-                'min' => '11.0.0',
-                'max' => '11.9.99'
+                'min' => '10.0.0',
+                'max' => '13.9.99'
             ]
         ]
     ];
@@ -30,6 +30,11 @@ function plugin_version_solpi(): array
 function plugin_init_solpi(): void
 {
     global $PLUGIN_HOOKS;
+
+    $loader = __DIR__ . '/vendor/autoload.php';
+    if (is_file($loader)) {
+        require_once $loader;
+    }
 
     $PLUGIN_HOOKS['csrf_compliant']['solpi'] = true;
     $PLUGIN_HOOKS['menu_entry']['solpi'] = 'front/index.php';
