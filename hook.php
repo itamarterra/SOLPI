@@ -165,3 +165,28 @@ function plugin_solpi_on_ticket_update(array $params): bool
 
     return true;
 }
+
+/**
+ * Hook: Indexa o ticket no Relationship Engine do SOLPI
+ */
+function plugin_solpi_index_ticket(array $params): void
+{
+    $item = $params['item'] ?? null;
+    if (!($item instanceof Ticket)) {
+        return;
+    }
+
+    $ticketId = (int)$item->getID();
+    if ($ticketId <= 0) {
+        return;
+    }
+
+    solpi_load_autoload();
+
+    try {
+        $manager = new \SOLPI\Modules\Intelligence\Services\RelationshipManager();
+        $manager->indexTicket($ticketId);
+    } catch (Throwable $e) {
+        // Log silencioso para não interromper o fluxo do GLPI
+    }
+}

@@ -48,11 +48,20 @@ function plugin_init_solpi(): void
         'plugins' => SOLPI\Menu\ImportMenu::class,
     ];
 
+    $PLUGIN_HOOKS['add_tabs']['solpi'] = [
+        'Ticket' => 'PluginSolpiIncidentGraph'
+    ];
+
     // Hook principal: disparado quando tecnico adiciona solucao ao ticket
-    $PLUGIN_HOOKS['item_add']['solpi'] = ['ITILSolution' => 'plugin_solpi_on_solution_added'];
+    $PLUGIN_HOOKS['item_add']['solpi'] = [
+        'ITILSolution' => 'plugin_solpi_on_solution_added',
+        'Ticket'       => 'plugin_solpi_index_ticket'
+    ];
 
     // Fallback: mudanca manual de status para Resolvido
-    $PLUGIN_HOOKS['item_update']['solpi'] = ['Ticket' => 'plugin_solpi_on_ticket_update'];
+    $PLUGIN_HOOKS['item_update']['solpi'] = [
+        'Ticket' => 'plugin_solpi_index_ticket'
+    ];
 
     if (file_exists(__DIR__ . '/hook.php')) {
         require_once __DIR__ . '/hook.php';
