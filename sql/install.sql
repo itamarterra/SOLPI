@@ -613,6 +613,15 @@ CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_kg_edges` (
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_inframap_snapshots` (
+
+    `id`           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `name`         VARCHAR(255) NOT NULL,
+    `payload`      LONGTEXT NOT NULL,
+    `created_at`   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ===========================================================
 -- GOVERNANCA E QUALIDADE DE DADOS (FASE 4)
 -- ===========================================================
