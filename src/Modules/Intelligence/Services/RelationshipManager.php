@@ -16,6 +16,7 @@ final class RelationshipManager
     private DatabaseManager $db;
     private \SOLPI\Modules\AI\Embeddings $embeddings;
     private SimilarityService $similarity;
+    private DependencyResolver $dependencyResolver;
 
     public function __construct()
     {
@@ -23,6 +24,7 @@ final class RelationshipManager
         $this->db = DatabaseManager::getInstance();
         $this->embeddings = new \SOLPI\Modules\AI\Embeddings();
         $this->similarity = new SimilarityService();
+        $this->dependencyResolver = new DependencyResolver();
     }
 
     /**
@@ -61,7 +63,7 @@ final class RelationshipManager
             );
         }
 
-        // 4. Localiza Ativos vinculados ao chamado
+        // 4. Localiza Ativos vinculados ao chamado e suas dependências
         $items = $this->db->table('glpi_items_tickets')
             ->where(['tickets_id' => $ticketId])
             ->get();
@@ -76,9 +78,12 @@ final class RelationshipManager
 
             // Relaciona Chamado -> Ativo
             $this->repository->addEdge($canonicalId, $targetId, 'AFFECTS', 1.0);
+
+            // 5. Expande a árvore de dependências do Ativo
+            $this->discoverDependencies($itemType, $itemId);
         }
 
-        // 3. Localiza Solicitante
+        // 6. Localiza Solicitante
         if ($ticket['users_id_recipient'] > 0) {
             $userId = "User:" . $ticket['users_id_recipient'];
             $this->repository->upsertNode($userId, 'User');
@@ -92,16 +97,20 @@ final class RelationshipManager
     public function discoverDependencies(string $itemType, int $itemId): void
     {
         $sourceId = "{$itemType}:{$itemId}";
+        $tree = $this->dependencyResolver->resolve($itemType, $itemId);
 
-        // Busca no CMDB do GLPI (Dependências de Itens)
-        // Nota: GLPI usa a tabela glpi_appliances_items ou relacionamentos de rede
-        $relations = $this->db->table('glpi_infocomms')
-            ->where(['items_id' => $itemId, 'itemtype' => $itemType])
-            ->get();
+        // Processa Upstream (Quem o ativo precisa para funcionar)
+        foreach ($tree['upstream'] as $dep) {
+            $targetId = "{$dep['type']}:{$dep['id']}";
+            $this->repository->upsertNode($targetId, $dep['type']);
+            $this->repository->addEdge($sourceId, $targetId, 'DEPENDS_ON', 1.0);
+        }
 
-        foreach ($relations as $rel) {
-            // Lógica para expandir a topologia será refinada no Módulo 3
-            // Por enquanto, registramos o ponto de entrada
+        // Processa Downstream (Quem depende do ativo atual)
+        foreach ($tree['downstream'] as $dep) {
+            $targetId = "{$dep['type']}:{$dep['id']}";
+            $this->repository->upsertNode($targetId, $dep['type']);
+            $this->repository->addEdge($sourceId, $targetId, 'SUPPORTS', 1.0);
         }
     }
 }
