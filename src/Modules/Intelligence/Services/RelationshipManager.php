@@ -14,11 +14,15 @@ final class RelationshipManager
 {
     private GraphRepository $repository;
     private DatabaseManager $db;
+    private \SOLPI\Modules\AI\Embeddings $embeddings;
+    private SimilarityService $similarity;
 
     public function __construct()
     {
         $this->repository = new GraphRepository();
         $this->db = DatabaseManager::getInstance();
+        $this->embeddings = new \SOLPI\Modules\AI\Embeddings();
+        $this->similarity = new SimilarityService();
     }
 
     /**
@@ -40,7 +44,24 @@ final class RelationshipManager
             'date'   => $ticket['date']
         ]);
 
-        // 2. Localiza Ativos vinculados ao chamado
+        // 2. Processamento Semântico (Embeddings)
+        $vector = $this->embeddings->generate($ticket['name'] . " " . strip_tags($ticket['content']));
+        $this->embeddings->store('Ticket', $ticketId, $vector);
+
+        // 3. Busca por chamados semelhantes no Grafo
+        $similar = $this->similarity->findSimilar($vector, 'Ticket', 0.85);
+        foreach ($similar as $match) {
+            if ($match['id'] === $ticketId) continue;
+
+            $this->repository->addEdge(
+                $canonicalId,
+                "Ticket:" . $match['id'],
+                'SIMILAR',
+                $match['score']
+            );
+        }
+
+        // 4. Localiza Ativos vinculados ao chamado
         $items = $this->db->table('glpi_items_tickets')
             ->where(['tickets_id' => $ticketId])
             ->get();

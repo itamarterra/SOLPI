@@ -69,7 +69,7 @@ Armazena a representação vetorial para cálculos de similaridade ultra-rápido
 ## 7. Roadmap de Implementação
 
 - [x] **Módulo 1: Graph Base**: Criação das tabelas e Repositories de relacionamento. (Concluído)
-- [ ] **Módulo 2: Semantic Memory**: Implementação dos Embeddings para similaridade de chamados.
+- [x] **Módulo 2: Semantic Memory**: Implementação dos Embeddings para similaridade de chamados. (Concluído)
 - [ ] **Módulo 3: Dependency Mapper**: Crawler de ativos e serviços nativos do GLPI.
 - [ ] **Módulo 4: Zabbix Link**: Integração do Webhook com a lógica de descoberta de ativos.
 - [ ] **Módulo 5: UI Insight**: Nova aba no Ticket do GLPI exibindo o "Mapa do Incidente".
