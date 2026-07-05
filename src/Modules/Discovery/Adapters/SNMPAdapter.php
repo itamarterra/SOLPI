@@ -9,6 +9,7 @@ use Exception;
 
 /**
  * Adaptador de Descoberta via SNMP (Agnóstico de Fabricante)
+ * Versão 2.0 - Suporte a Topologia L2 (LLDP/CDP)
  */
 final class SNMPAdapter implements DiscoveryAdapterInterface
 {
@@ -27,7 +28,7 @@ final class SNMPAdapter implements DiscoveryAdapterInterface
 
     public function isSupported(): bool
     {
-        return function_exists('snmpget');
+        return function_exists('snmpget') && function_exists('snmprealwalk');
     }
 
     public function discover(string $ip): ?array
@@ -36,18 +37,14 @@ final class SNMPAdapter implements DiscoveryAdapterInterface
             return null;
         }
 
-        // Suprime erros para evitar poluição no log se o host não responder SNMP
         error_reporting(error_reporting() & ~E_WARNING);
 
         try {
-            // OIDs Padrão (RFC 1213)
             $sysDescr = @snmpget($ip, $this->community, ".1.3.6.1.2.1.1.1.0", $this->timeout, $this->retries);
+            if ($sysDescr === false) return null;
+
             $sysName  = @snmpget($ip, $this->community, ".1.3.6.1.2.1.1.5.0", $this->timeout, $this->retries);
             $sysObjectID = @snmpget($ip, $this->community, ".1.3.6.1.2.1.1.2.0", $this->timeout, $this->retries);
-
-            if ($sysDescr === false) {
-                return null;
-            }
 
             return [
                 'name'        => $this->cleanValue($sysName),
@@ -62,11 +59,44 @@ final class SNMPAdapter implements DiscoveryAdapterInterface
         }
     }
 
+    /**
+     * Busca vizinhos de rede via LLDP ou CDP
+     */
+    public function getNeighbors(string $ip): array
+    {
+        $neighbors = [];
+
+        // 1. Tenta LLDP (Padrão 802.1AB)
+        $lldpNames = @snmprealwalk($ip, $this->community, ".1.0.8802.1.1.2.1.4.1.1.9", $this->timeout, $this->retries);
+        if ($lldpNames) {
+            foreach ($lldpNames as $oid => $val) {
+                $neighbors[] = [
+                    'remote_name' => $this->cleanValue($val),
+                    'protocol'    => 'LLDP'
+                ];
+            }
+        }
+
+        // 2. Tenta CDP (Cisco / Onmipresente)
+        if (empty($neighbors)) {
+            $cdpNames = @snmprealwalk($ip, $this->community, ".1.3.6.1.4.1.9.9.23.1.2.1.1.6", $this->timeout, $this->retries);
+            if ($cdpNames) {
+                foreach ($cdpNames as $oid => $val) {
+                    $neighbors[] = [
+                        'remote_name' => $this->cleanValue($val),
+                        'protocol'    => 'CDP'
+                    ];
+                }
+            }
+        }
+
+        return $neighbors;
+    }
+
     private function cleanValue($val): string
     {
         if (!$val) return '';
-        // Remove prefixos como "STRING: " que alguns binários SNMP retornam
-        return preg_replace('/^(STRING|OID|INTEGER|Gauge32|Counter32):\s+/i', '', trim((string)$val, '" '));
+        return preg_replace('/^(STRING|OID|INTEGER|Gauge32|Counter32|Hex-STRING):\s+/i', '', trim((string)$val, '" '));
     }
 
     private function inferType(string $descr): string
@@ -75,9 +105,7 @@ final class SNMPAdapter implements DiscoveryAdapterInterface
         if (str_contains($descr, 'switch')) return 'Switch';
         if (str_contains($descr, 'router') || str_contains($descr, 'gateway')) return 'Router';
         if (str_contains($descr, 'printer') || str_contains($descr, 'laserjet')) return 'Printer';
-        if (str_contains($descr, 'windows')) return 'Server/PC';
-        if (str_contains($descr, 'linux')) return 'Server/PC';
-
+        if (str_contains($descr, 'windows') || str_contains($descr, 'linux')) return 'Server/PC';
         return 'NetworkNode';
     }
 }

@@ -74,7 +74,8 @@ Ao perguntar "Quem depende do SQL01?", a IA executará um *Traverser* no grafo d
 ## 8. Roadmap de Implementação
 1.  **Fase 1 (Core SIIP)**: Modelos canônicos e Repositories de Grafo com suporte a versionamento. (Concluído)
 2.  **Fase 2 (Discovery Base)**: Implementação de SNMP e ICMP Scanner agnóstico. (Concluído)
-3.  **Fase 3 (Topology Engine)**: Lógica de vizinhança L2 (LLDP/CDP).
+3.  **Fase 3 (Topology Engine)**: Lógica de vizinhança L2 (LLDP/CDP). (Concluído)
+4.  **Fase 4 (Digital Twin & Change)**: Sistema de snapshots e detecção de mudanças.
 4.  **Fase 4 (Digital Twin & Change)**: Sistema de snapshots e detecção de mudanças.
 5.  **Fase 5 (AI Logic)**: Interface de consulta em linguagem natural.
 6.  **Fase 6 (Visualizer)**: Mapas interativos (Físico, Lógico, Dependência).
