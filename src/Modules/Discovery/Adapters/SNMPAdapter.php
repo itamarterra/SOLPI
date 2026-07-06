@@ -9,7 +9,7 @@ use Exception;
 
 /**
  * Adaptador de Descoberta via SNMP (Agnóstico de Fabricante)
- * Versão 2.0 - Suporte a Topologia L2 (LLDP/CDP)
+ * Versão 2.1 - Estabilizada e com suporte a Topologia L2
  */
 final class SNMPAdapter implements DiscoveryAdapterInterface
 {
@@ -17,11 +17,11 @@ final class SNMPAdapter implements DiscoveryAdapterInterface
     private int $timeout;
     private int $retries;
 
-    public function __construct(string $community = 'public', int $timeout = 1000000, int $retries = 1)
+    public function __construct(string $community = 'public', int $timeout = 100000, int $retries = 0)
     {
         $this->community = $community;
-        $this->timeout = $timeout;
-        $this->retries = $retries;
+        $this->timeout = $timeout; // Reduzido para 100ms para descoberta rápida
+        $this->retries = $retries; // 0 retentativas para velocidade
     }
 
     public function getProtocol(): string { return 'SNMP'; }
@@ -37,14 +37,16 @@ final class SNMPAdapter implements DiscoveryAdapterInterface
             return null;
         }
 
-        error_reporting(error_reporting() & ~E_WARNING);
+        // Suprime avisos temporários para pings SNMP silenciosos
+        $oldLevel = error_reporting();
+        error_reporting($oldLevel & ~E_WARNING);
 
         try {
-            $sysDescr = @snmpget($ip, $this->community, ".1.3.6.1.2.1.1.1.0", $this->timeout, $this->retries);
+            $sysDescr = @\snmpget($ip, $this->community, ".1.3.6.1.2.1.1.1.0", $this->timeout, $this->retries);
             if ($sysDescr === false) return null;
 
-            $sysName  = @snmpget($ip, $this->community, ".1.3.6.1.2.1.1.5.0", $this->timeout, $this->retries);
-            $sysObjectID = @snmpget($ip, $this->community, ".1.3.6.1.2.1.1.2.0", $this->timeout, $this->retries);
+            $sysName  = @\snmpget($ip, $this->community, ".1.3.6.1.2.1.1.5.0", $this->timeout, $this->retries);
+            $sysObjectID = @\snmpget($ip, $this->community, ".1.3.6.1.2.1.1.2.0", $this->timeout, $this->retries);
 
             return [
                 'name'        => $this->cleanValue($sysName),
@@ -55,7 +57,7 @@ final class SNMPAdapter implements DiscoveryAdapterInterface
         } catch (Exception) {
             return null;
         } finally {
-            error_reporting(error_reporting() | E_WARNING);
+            error_reporting($oldLevel);
         }
     }
 
@@ -64,10 +66,14 @@ final class SNMPAdapter implements DiscoveryAdapterInterface
      */
     public function getNeighbors(string $ip): array
     {
+        if (!$this->isSupported()) {
+            return [];
+        }
+
         $neighbors = [];
 
         // 1. Tenta LLDP (Padrão 802.1AB)
-        $lldpNames = @snmprealwalk($ip, $this->community, ".1.0.8802.1.1.2.1.4.1.1.9", $this->timeout, $this->retries);
+        $lldpNames = @\snmprealwalk($ip, $this->community, ".1.0.8802.1.1.2.1.4.1.1.9", $this->timeout, $this->retries);
         if ($lldpNames) {
             foreach ($lldpNames as $oid => $val) {
                 $neighbors[] = [
@@ -77,9 +83,9 @@ final class SNMPAdapter implements DiscoveryAdapterInterface
             }
         }
 
-        // 2. Tenta CDP (Cisco / Onmipresente)
+        // 2. Tenta CDP (Cisco)
         if (empty($neighbors)) {
-            $cdpNames = @snmprealwalk($ip, $this->community, ".1.3.6.1.4.1.9.9.23.1.2.1.1.6", $this->timeout, $this->retries);
+            $cdpNames = @\snmprealwalk($ip, $this->community, ".1.3.6.1.4.1.9.9.23.1.2.1.1.6", $this->timeout, $this->retries);
             if ($cdpNames) {
                 foreach ($cdpNames as $oid => $val) {
                     $neighbors[] = [
@@ -91,6 +97,27 @@ final class SNMPAdapter implements DiscoveryAdapterInterface
         }
 
         return $neighbors;
+    }
+
+    /**
+     * Busca a lista de VLANs configuradas no equipamento
+     */
+    public function getVlans(string $ip): array
+    {
+        if (!$this->isSupported()) {
+            return [];
+        }
+
+        $vlans = [];
+        $names = @\snmprealwalk($ip, $this->community, ".1.3.6.1.2.1.17.7.1.4.3.1.1", $this->timeout, $this->retries);
+
+        if ($names) {
+            foreach ($names as $oid => $val) {
+                $id = (int)substr($oid, strrpos($oid, '.') + 1);
+                $vlans[$id] = $this->cleanValue($val);
+            }
+        }
+        return $vlans;
     }
 
     private function cleanValue($val): string

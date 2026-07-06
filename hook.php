@@ -8,7 +8,6 @@ if (!defined('GLPI_ROOT')) {
 
 /**
  * Carrega o autoload do SOLPI de forma segura (sem conflito com GLPI_ROOT).
- * Chamado dentro de cada função de hook para garantir as classes SOLPI.
  */
 function solpi_load_autoload(): void
 {
@@ -25,13 +24,9 @@ function solpi_load_autoload(): void
 
 /**
  * Hook: disparado quando o técnico adiciona uma solução ao ticket.
- * Equivale ao "Adicionar Solução / Pedir Aprovação" no GLPI.
- * Envia mensagem WhatsApp SIM/NAO ao solicitante.
  */
-function plugin_solpi_on_solution_added(array $params): bool
+function plugin_solpi_on_solution_added($item): bool
 {
-    $item = $params['item'] ?? null;
-
     if (!($item instanceof ITILSolution)) {
         return true;
     }
@@ -89,78 +84,7 @@ function plugin_solpi_on_solution_added(array $params): bool
         $whatsappRepo->saveMessage($phone, 'OUTBOUND', $msg, 'SENT', (int)$solpiTicket['id']);
 
     } catch (Throwable $e) {
-        file_put_contents(
-            GLPI_LOG_DIR . '/solpi_hook_error.log',
-            date('[Y-m-d H:i:s] ') . $e->getMessage() . ' in ' . basename($e->getFile()) . ':' . $e->getLine() . "\n",
-            FILE_APPEND
-        );
-    }
-
-    return true;
-}
-
-/**
- * Fallback: mudança manual de status para Resolvido (sem solução via ITILSolution).
- */
-function plugin_solpi_on_ticket_update(array $params): bool
-{
-    $item = $params['item'] ?? null;
-
-    if (!($item instanceof Ticket)) {
-        return true;
-    }
-
-    $newStatus = (int)($item->fields['status'] ?? 0);
-    if ($newStatus !== Ticket::SOLVED) {
-        return true;
-    }
-
-    $glpiTicketId = (int)$item->getID();
-
-    solpi_load_autoload();
-
-    try {
-        $ticketRepo  = new SOLPI\Modules\Tickets\TicketRepository();
-        $solpiTicket = $ticketRepo->findByGLPITicketId($glpiTicketId);
-
-        if ($solpiTicket === null) {
-            return true;
-        }
-
-        if (in_array($solpiTicket['status'], ['AWAITING_CONFIRMATION', 'AWAITING_RATING', 'RATED'], true)) {
-            return true;
-        }
-
-        $phone = $ticketRepo->getPhoneForTicket((int)$solpiTicket['id']);
-
-        if ($phone === null) {
-            return true;
-        }
-
-        $ticketRepo->updateStatus((int)$solpiTicket['id'], 'AWAITING_CONFIRMATION');
-
-        $config   = new SOLPI\Core\Config();
-        $config->load();
-        $evolution = new SOLPI\Integrations\Evolution\EvolutionClient(
-            $config->get('evolution', [])
-        );
-
-        $msg = "Olá! O seu chamado *#{$glpiTicketId}* foi resolvido pela equipe de suporte.\n\n"
-             . "O problema foi resolvido?\n\n"
-             . "*SIM* — confirmar e encerrar o chamado\n"
-             . "*NÃO* — continuar o atendimento";
-
-        $evolution->sendText($phone, $msg);
-
-        $whatsappRepo = new SOLPI\Modules\WhatsApp\WhatsAppRepository();
-        $whatsappRepo->saveMessage($phone, 'OUTBOUND', $msg, 'SENT', (int)$solpiTicket['id']);
-
-    } catch (Throwable $e) {
-        file_put_contents(
-            GLPI_LOG_DIR . '/solpi_hook_error.log',
-            date('[Y-m-d H:i:s] ') . $e->getMessage() . "\n",
-            FILE_APPEND
-        );
+        error_log("SOLPI Hook Error: " . $e->getMessage());
     }
 
     return true;
@@ -169,9 +93,8 @@ function plugin_solpi_on_ticket_update(array $params): bool
 /**
  * Hook: Indexa o ticket no Relationship Engine do SOLPI
  */
-function plugin_solpi_index_ticket(array $params): void
+function plugin_solpi_index_ticket($item): void
 {
-    $item = $params['item'] ?? null;
     if (!($item instanceof Ticket)) {
         return;
     }
@@ -187,6 +110,7 @@ function plugin_solpi_index_ticket(array $params): void
         $manager = new \SOLPI\Modules\Intelligence\Services\RelationshipManager();
         $manager->indexTicket($ticketId);
     } catch (Throwable $e) {
-        // Log silencioso para não interromper o fluxo do GLPI
+        // Log silencioso
+        error_log("SOLPI Indexing Error: " . $e->getMessage());
     }
 }

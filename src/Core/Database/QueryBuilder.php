@@ -85,8 +85,11 @@ final class QueryBuilder
      */
     public function first(): ?array
     {
-        $this->limit(1);
-        foreach ($this->get() as $row) {
+        $q = $this->query;
+        $q['LIMIT'] = 1;
+
+        $it = $this->db->request($q);
+        foreach ($it as $row) {
             return $row;
         }
         return null;
@@ -94,9 +97,22 @@ final class QueryBuilder
 
     public function count(): int
     {
-        $this->select(['COUNT(*) as total']);
-        $row = $this->first();
-        return (int)($row['total'] ?? 0);
+        $q = $this->query;
+        $q['COUNT'] = 'total';
+
+        // Remove SELECT para não conflitar com o COUNT do GLPI
+        unset($q['SELECT']);
+
+        $it = $this->db->request($q);
+        foreach ($it as $row) {
+            return (int)($row['total'] ?? 0);
+        }
+        return 0;
+    }
+
+    public function delete(): bool
+    {
+        return $this->db->delete($this->query['FROM'], $this->query['WHERE'] ?? []);
     }
 
     public function toArray(): array

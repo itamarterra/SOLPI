@@ -7,74 +7,58 @@ namespace SOLPI\Modules\Infrastructure\Services;
 use SOLPI\Core\Database\DatabaseManager;
 
 /**
- * Serviço para gerar a representação visual do Digital Twin.
- * Formata os dados para bibliotecas de visualização como Vis.js.
+ * Visualização v4.5 - Nomes e IPs Combinados + Ícones Precisos
  */
 final class InfraVisualizationService
 {
     private DatabaseManager $db;
 
-    public function __construct()
-    {
-        $this->db = DatabaseManager::getInstance();
-    }
+    public function __construct() { $this->db = DatabaseManager::getInstance(); }
 
-    /**
-     * Retorna o dataset completo do Digital Twin (Global)
-     */
     public function getGlobalMap(): array
     {
-        $nodes = [];
-        $edges = [];
-
-        // 1. Busca todos os nós do Digital Twin
+        $nodes = []; $edges = [];
         $nodeRows = $this->db->table('glpi_plugin_solpi_inframap_nodes')->get();
+
         foreach ($nodeRows as $row) {
+            $meta = json_decode((string)$row['metadata'], true) ?: [];
+            $status = $meta['status'] ?? 'ONLINE';
+            $ip = $meta['ip'] ?? '';
+
             $nodes[] = [
                 'id'    => $row['uuid'],
-                'label' => $row['label'],
+                'label' => $row['label'] . ($ip ? "\n" . $ip : ""), // Nome + IP
                 'group' => $row['class'],
-                'title' => $this->formatTitle($row)
+                'shape' => 'image',
+                'image' => $this->getNodeImage($row['class'], $status),
+                'size'  => 35,
+                'font'  => ['size' => 11, 'face' => 'Plus Jakarta Sans', 'color' => '#1e293b', 'strokeWidth' => 2, 'strokeColor' => '#fff'],
+                'ip'    => $ip,
+                'real_name' => $row['label']
             ];
         }
 
-        // 2. Busca todas as arestas (relacionamentos)
-        $edgeRows = $this->db->table('glpi_plugin_solpi_inframap_edges')->get();
-        foreach ($edgeRows as $row) {
+        foreach ($this->db->table('glpi_plugin_solpi_inframap_edges')->get() as $row) {
             $edges[] = [
-                'from'   => $row['source_uuid'],
-                'to'     => $row['target_uuid'],
-                'label'  => $row['relation_type'],
-                'arrows' => 'to',
-                'color'  => $this->getRelationColor($row['relation_type'])
+                'from' => $row['source_uuid'], 'to' => $row['target_uuid'],
+                'arrows' => 'to', 'color' => '#cbd5e1', 'width' => 2
             ];
         }
-
-        return [
-            'nodes' => $nodes,
-            'edges' => $edges
-        ];
+        return ['nodes' => $nodes, 'edges' => $edges];
     }
 
-    private function formatTitle(array $row): string
+    private function getNodeImage(string $class, string $status): string
     {
-        $meta = json_decode((string)$row['metadata'], true) ?: [];
-        $title = "<b>" . htmlspecialchars($row['label']) . "</b><br>";
-        $title .= "Classe: " . $row['class'] . "<br>";
-        foreach ($meta as $k => $v) {
-            if (is_scalar($v)) $title .= ucfirst($k) . ": $v<br>";
-        }
-        return $title;
-    }
+        $baseUrl = "https://img.icons8.com/fluency/96/";
+        $suffix = ($status === 'OFFLINE') ? "?sepia=100" : "";
 
-    private function getRelationColor(string $type): string
-    {
-        return match($type) {
-            'PHYSICAL_LINK' => '#3b82f6', // Azul
-            'DEPENDS_ON'    => '#ef4444', // Vermelho
-            'SUPPORTS'      => '#10b981', // Verde
-            'RUNS_ON'       => '#8b5cf6', // Roxo
-            default         => '#94a3b8'  // Cinza
+        return match($class) {
+            'Router' => $baseUrl . "router.png" . $suffix,
+            'Switch' => $baseUrl . "network-switch.png" . $suffix,
+            'Mobile' => $baseUrl . "iphone.png" . $suffix,
+            'Printer'=> $baseUrl . "print.png" . $suffix,
+            'Server' => $baseUrl . "server.png" . $suffix,
+            default  => $baseUrl . "monitor.png" . $suffix
         };
     }
 }

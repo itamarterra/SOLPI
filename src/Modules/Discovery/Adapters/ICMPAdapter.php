@@ -32,10 +32,10 @@ final class ICMPAdapter implements DiscoveryAdapterInterface
 
     private function ping(string $ip): bool
     {
-        // No Windows usamos 'ping -n 1', no Linux 'ping -c 1'
+        // Reduzido timeout para 200ms para varredura mais rápida
         $cmd = (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')
-            ? "ping -n 1 -w 500 " . escapeshellarg($ip)
-            : "ping -c 1 -W 1 " . escapeshellarg($ip) . " > /dev/null 2>&1";
+            ? "ping -n 1 -w 200 " . escapeshellarg($ip)
+            : "ping -c 1 -W 0.2 " . escapeshellarg($ip) . " > /dev/null 2>&1";
 
         exec($cmd, $output, $result);
 

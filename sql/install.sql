@@ -613,17 +613,52 @@ CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_kg_edges` (
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_inframap_snapshots` (
+-- ===========================================================
+-- INFRAMAP E DIGITAL TWIN (SIIP)
+-- ===========================================================
 
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_inframap_nodes` (
+    `id`          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `uuid`        VARCHAR(64) UNIQUE NOT NULL,
+    `external_id` VARCHAR(100) NULL,
+    `class`       VARCHAR(50) NOT NULL,
+    `label`       VARCHAR(255) NOT NULL,
+    `metadata`    LONGTEXT NULL,
+    `created_at`  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_inframap_edges` (
+    `id`              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `source_uuid`     VARCHAR(64) NOT NULL,
+    `target_uuid`     VARCHAR(64) NOT NULL,
+    `relation_type`   VARCHAR(50) NOT NULL,
+    `confidence`      DECIMAL(3,2) DEFAULT 1.00,
+    `source_protocol` VARCHAR(50) DEFAULT 'manual',
+    `metadata`        LONGTEXT NULL,
+    `created_at`      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX `idx_source` (`source_uuid`),
+    INDEX `idx_target` (`target_uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_inframap_history` (
+    `id`          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `target_uuid` VARCHAR(64) NOT NULL,
+    `change_type` VARCHAR(100) NOT NULL,
+    `old_value`   LONGTEXT NULL,
+    `new_value`   LONGTEXT NULL,
+    `created_at`  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_inframap_snapshots` (
     `id`           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `name`         VARCHAR(255) NOT NULL,
     `payload`      LONGTEXT NOT NULL,
     `created_at`   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ===========================================================
--- GOVERNANCA E QUALIDADE DE DADOS (FASE 4)
+-- CHECKPOINTS DE FONTE (FASE 6)
 -- ===========================================================
 
 CREATE TABLE IF NOT EXISTS `glpi_plugin_solpi_data_quality_reports` (

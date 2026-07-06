@@ -27,8 +27,9 @@ A SIIP é o ecossistema de inteligência do SOLPI projetado para criar e manter 
 
 ### 4.1 Discovery Engine (`SOLPI\Modules\Discovery`)
 - `ProtocolManager`: Orquestra as tentativas de conexão (ICMP -> SNMP -> SSH).
-- `Adapters`: Drivers específicos por fabricante/tecnologia (CiscoDriver, VMwareDriver, DockerDriver).
+- `Adapters`: Drivers específicos por fabricante/tecnologia (CiscoDriver, VMwareDriver, DockerDriver, ZabbixAdapter).
 - `ScannerService`: Gerencia varreduras de rede e inventário de portas.
+- **VLAN Mapper**: Extrai informações de VLANs via MIBs BRIDGE e Q-BRIDGE.
 
 ### 4.2 Network Topology Engine (`SOLPI\Modules\Topology`)
 - `L2Mapper`: Mapeia vizinhanças via LLDP/CDP e tabelas MAC.
@@ -39,9 +40,11 @@ A SIIP é o ecossistema de inteligência do SOLPI projetado para criar e manter 
 - `StateManager`: Mantém a "Foto" atual da rede.
 - `SnapshotService`: Cria versões da infraestrutura para auditoria de mudanças.
 - `DifferenceEngine`: Detecta discrepâncias (Ex: IP mudou, Ativo sumiu).
+- **Health Monitor**: Serviço de monitoramento de Uptime (ICMP/Zabbix) integrado ao mapa.
 
-### 4.4 Confidence Engine (`SOLPI\Modules\Intelligence`)
-- `ScoringService`: Atribui pesos (1.00 para API oficial, 0.70 para Inferência).
+### 4.4 Intelligence Engine (`SOLPI\Modules\Intelligence`)
+- `ScoringService`: Atribui pesos de confiança.
+- **AI Insight Service**: Gera resumos executivos da infraestrutura e envia via WhatsApp/Web.
 
 ## 5. Estrutura de Banco de Dados (Schema Enterprise)
 

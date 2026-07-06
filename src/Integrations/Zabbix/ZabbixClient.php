@@ -4,38 +4,33 @@ declare(strict_types=1);
 
 namespace SOLPI\Integrations\Zabbix;
 
-use SOLPI\Contracts\HttpClientInterface;
-
 final class ZabbixClient
 {
+    private ZabbixHttpClient $http;
+
     public function __construct(
-        private readonly HttpClientInterface $http,
+        ZabbixHttpClient $http,
         private readonly ZabbixModel $config
     ) {
+        $this->http = $http;
     }
 
-    public function request(
-        string $method,
-        array $params = []
-    ): array {
-
-        return $this->http->post(
-
+    public function request(string $method, array $params = []): array
+    {
+        $response = $this->http->post(
             $this->config->url . '/api_jsonrpc.php',
-
             [
-                'Content-Type' => 'application/json-rpc'
+                'Content-Type' => 'application/json'
             ],
-
             [
                 'jsonrpc' => '2.0',
-                'method'   => $method,
-                'params'   => $params,
-                'auth'     => $this->config->token,
-                'id'       => 1
-            ]
-
+                'method'  => $method,
+                'params'  => $params,
+                'id'      => 1
+            ],
+            $this->config->token // Passa o token para ser enviado via Header
         );
 
+        return $response['body'] ?? [];
     }
 }

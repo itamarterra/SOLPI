@@ -18,14 +18,14 @@ return [
         'enabled'        => $envBool('SOLPI_EVOLUTION_ENABLED', true),
         'base_url'       => getenv('SOLPI_EVOLUTION_BASE_URL') ?: 'http://evolution-api:8080',
         'instance'       => getenv('SOLPI_EVOLUTION_INSTANCE') ?: 'solpi',
-        'auth_key'       => getenv('SOLPI_WEBHOOK_SECRET') ?: getenv('SOLPI_EVOLUTION_TOKEN') ?: '',
+        'auth_key'       => getenv('SOLPI_WEBHOOK_SECRET') ?: getenv('SOLPI_EVOLUTION_TOKEN') ?: 'solpi123',
         'api_key_header' => 'apikey',
     ],
 
     'zabbix' => [
-        'enabled'  => $envBool('SOLPI_ZABBIX_ENABLED', false),
-        'base_url' => getenv('SOLPI_ZABBIX_URL') ?: '',
-        'token'    => getenv('SOLPI_ZABBIX_TOKEN') ?: '',
+        'enabled'  => true,
+        'base_url' => getenv('SOLPI_ZABBIX_URL') ?: 'http://zabbix-web:8080',
+        'token'    => '013b6bdc5dfa3f943e10a2ee8a66c2e151c1ab1afb7769c824d45f1691f6d57f',
     ],
 
     'ai' => [
@@ -36,4 +36,3 @@ return [
     ],
 
 ];
-
