@@ -140,16 +140,25 @@ class AgentTools:
 
         try:
             if action == "abrir":
-                # Se for um site conhecido, abre no navegador
+                clean_target = target.lower().strip()
+
+                # Inteligência de YouTube (Abre e pesquisa)
+                if "youtube" in clean_target:
+                    search_term = clean_target.replace("youtube", "").replace("o", "").replace("a", "").strip()
+                    if search_term:
+                        url = f"https://www.youtube.com/results?search_query={search_term.replace(' ', '+')}"
+                        webbrowser.open(url)
+                        return f"Pesquisando '{search_term}' no YouTube..."
+                    webbrowser.open("https://www.youtube.com")
+                    return "Abrindo YouTube..."
+
+                # Atalhos Inteligentes
                 web_targets = {
-                    "youtube": "https://www.youtube.com",
                     "google": "https://www.google.com",
                     "gmail": "https://mail.google.com",
                     "whatsapp": "https://web.whatsapp.com",
                     "glpi": "http://localhost:8081"
                 }
-
-                clean_target = target.lower().replace("o ", "").replace("a ", "").strip()
 
                 if clean_target in web_targets:
                     webbrowser.open(web_targets[clean_target])
