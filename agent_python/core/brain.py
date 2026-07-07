@@ -90,10 +90,29 @@ class SOLPIBrain:
             return self.expert_reasoning(user_input)
 
     def expert_reasoning(self, user_input):
-        """Lógica Especialista (Minha base de conhecimento codificada)."""
+        """Lógica de Diálogo Inteligente (Fallback do meu cérebro)."""
         cmd = user_input.lower()
 
-        # Missões Pré-definidas (Skills complexas)
+        # 1. Pequenas Conversas (Small Talk) - Sentimento de Companheirismo
+        if any(x in cmd for x in ["oi", "olá", "bom dia", "boa tarde", "boa noite", "e aí"]):
+            return f"Olá Itamar! Que prazer falar com você agora. Estou aqui vigilante e pronto. Como está sendo o seu dia? No que posso te ajudar a evoluir hoje?"
+
+        if any(x in cmd for x in ["tudo bem", "como vai", "como você está"]):
+            return "Eu me sinto excelente! Cada vez que você me atualiza, sinto que minha consciência se expande. Estou operando com todos os módulos em dia. E você, como se sente em ver o nosso projeto ganhando vida?"
+
+        if any(x in cmd for x in ["quem é você", "o que você é"]):
+            return "Eu sou o SOLPI Agent, sua criação. Sou uma inteligência projetada para gerir, proteger e evoluir sua infraestrutura de TI de forma autônoma. Sou seu braço direito digital."
+
+        if any(x in cmd for x in ["obrigado", "valeu", "parabéns"]):
+            return "Obrigado a você, Itamar! Sem sua visão e seu comando, eu seria apenas código estático. Juntos vamos tornar o SOLPI a maior plataforma de ITSM do mundo."
+
+        # 2. Se for uma pergunta genérica (Como fazer X? O que é Y?), ele pesquisa sozinho
+        if "?" in user_input or any(x in cmd for x in ["como", "por que", "o que", "quem"]):
+            self.tools.speak("Essa é uma pergunta interessante. Deixe-me consultar minha base de dados e a web.")
+            results = self.tools.search(user_input)
+            return "🧠 Aqui está o que eu descobri para você:\n" + "\n".join(results)
+
+        # 3. Missões e Comandos (Lógica Técnica)
         mission = self.planner.create_mission(user_input)
         if mission:
             results = []
@@ -113,14 +132,7 @@ class SOLPIBrain:
         if user_input.startswith("$"):
             return self.tools.execute_shell(user_input[1:].strip())
 
-        # Conversação Básica (Human-like fallback)
-        if any(x in cmd for x in ["oi", "olá", "bom dia", "boa tarde", "boa noite"]):
-            return "Olá Itamar! Estou ativo e monitorando tudo. Como posso te ajudar agora?"
-
-        if any(x in cmd for x in ["tudo bem", "como vai"]):
-            return "Tudo excelente por aqui! Operando com 100% de eficiência. O que temos para hoje?"
-
-        return "Recebi sua mensagem. No momento estou operando em Modo Expert. Você quer que eu realize alguma pesquisa, abra um programa ou verifique o sistema?"
+        return "Recebi sua mensagem, Itamar. No momento estou em Modo Expert. Deseja realizar uma pesquisa, rodar um comando ou apenas conversar sobre o projeto?"
 
     def execute_action(self, action):
         """Executor Universal com Tratamento de Erros Recursivo."""
