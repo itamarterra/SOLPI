@@ -70,10 +70,42 @@ class AgentTools:
         except: return "❌ Erro no Git."
 
     @staticmethod
+    def analyze_screen():
+        """Vision Engine v1.0: O Agente 'vê' e entende a tela do Itamar."""
+        import pyautogui
+        import base64
+        from io import BytesIO
+
+        print("👁️ [VISION]: Analisando o contexto visual...")
+        path = os.path.join(os.getcwd(), "logs", "vision_temp.png")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        pyautogui.screenshot(path)
+
+        with open(path, "rb") as image_file:
+            base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+
+        return base64_image
+
+    @staticmethod
+    def auto_fix_code(file_path, error_message):
+        """O Agente tenta consertar seu próprio código ao detectar um erro."""
+        print(f"🔧 [AUTO-FIX]: Tentando corrigir erro em {file_path}...")
+        # Lógica de reparo será disparada pelo Brain via IA
+        return f"Iniciando protocolo de reparo para: {error_message}"
+
+    @staticmethod
     def speak(text):
+        # Melhorei a voz para ser mais natural (se disponível)
         try:
             import pyttsx3
             engine = pyttsx3.init()
+            voices = engine.getProperty('voices')
+            # Tenta pegar uma voz em português
+            for voice in voices:
+                if "brazil" in voice.name.lower() or "portuguese" in voice.name.lower():
+                    engine.setProperty('voice', voice.id)
+                    break
+            engine.setProperty('rate', 180)
             engine.say(text)
             engine.runAndWait()
         except: print(f"🤖: {text}")
