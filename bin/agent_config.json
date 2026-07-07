@@ -1,5 +1,5 @@
 {
-    "glpi_url": "",
+    "glpi_url": "http://localhost:8081",
     "agent_token": "solpi123",
     "site_name": "ITAMAR-PC"
 }

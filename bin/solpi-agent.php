@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * SOLPI Agent CLI v1.0
+ * SOLPI Agent CLI v1.1
  * Operação: Discovery, Heartbeat e Automação Local
  */
 
@@ -11,10 +11,9 @@ if (PHP_SAPI !== 'cli') {
     die("Este script deve ser executado via CLI.\n");
 }
 
-echo "\n🚀 SOLPI AGENT v1.0\n";
+echo "\n🚀 SOLPI AGENT v1.1\n";
 echo "====================\n\n";
 
-// 1. Configurações Iniciais
 $configPath = __DIR__ . '/agent_config.json';
 $config = [];
 
@@ -30,21 +29,35 @@ if (file_exists($configPath)) {
     echo "\n✅ Configuração salva!\n";
 }
 
+$registerUrl = rtrim($config['glpi_url'], '/') . '/plugins/solpi/ajax/agent_register.php';
+
 echo "📡 Conectando ao SOLPI Registry em " . $config['glpi_url'] . "...\n";
 echo "🛰️  Agente " . $config['site_name'] . " está agora em operação.\n\n";
 
-// 2. Loop de Heartbeat
+// Loop de Heartbeat Real
 while (true) {
-    echo "[" . date('H:i:s') . "] ❤️  Heartbeat Status: ONLINE\n";
+    try {
+        $payload = json_encode(['site_name' => $config['site_name'], 'token' => $config['agent_token']]);
 
-    /**
-     * Futura implementação real de envio de inventário:
-     * $payload = [
-     *    'hostname' => gethostname(),
-     *    'os' => PHP_OS,
-     *    'ip' => gethostbyname(gethostname())
-     * ];
-     */
+        $ch = curl_init($registerUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
 
-    sleep(30); // Heartbeat a cada 30 segundos para teste
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode === 200) {
+            echo "[" . date('H:i:s') . "] ❤️  Heartbeat Status: ONLINE\n";
+        } else {
+            echo "[" . date('H:i:s') . "] ⚠️  Erro na conexão (HTTP $httpCode). Tentando novamente...\n";
+        }
+    } catch (Exception $e) {
+        echo "[" . date('H:i:s') . "] ❌ Falha: " . $e->getMessage() . "\n";
+    }
+
+    sleep(30);
 }
