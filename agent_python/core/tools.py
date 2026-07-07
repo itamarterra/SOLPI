@@ -164,3 +164,29 @@ class AgentTools:
             with open(log_path, 'r') as f:
                 return f.readlines()[-lines:]
         except: return "Erro ao ler logs."
+
+    @staticmethod
+    def modify_self(file_path, new_content):
+        """Habilidade Suprema: O Agente reescreve seu próprio código."""
+        # Apenas arquivos na pasta do Agente podem ser modificados
+        base_dir = "C:/SOLPI-Agent"
+        target_path = os.path.abspath(file_path)
+
+        if not target_path.startswith(os.path.abspath(base_dir)):
+            return "BLOQUEIO: Tentativa de modificar arquivos fora do diretório do Agente."
+
+        try:
+            # Backup de segurança antes de mudar
+            shutil.copy(target_path, target_path + ".bak")
+            with open(target_path, 'w', encoding='utf-8') as f:
+                f.write(new_content)
+            return f"✅ Auto-evolução concluída no arquivo: {file_path}. Backup criado."
+        except Exception as e:
+            return f"❌ Falha na auto-evolução: {str(e)}"
+
+    @staticmethod
+    def reflect_and_fix(task_result):
+        """Analisa o resultado de uma tarefa e sugere correções (Auto-correção)."""
+        if "Erro" in str(task_result) or "Falha" in str(task_result):
+            return "Detectei uma falha. Vou tentar um método alternativo em 5 segundos."
+        return "Tarefa bem-sucedida. Prosseguindo."
