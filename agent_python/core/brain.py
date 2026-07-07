@@ -4,63 +4,48 @@ import requests
 import re
 from core.tools import AgentTools
 from core.planner import SOLPIPlanner
-from core.persona import SOLPIPersona
 
 class SOLPIBrain:
     def __init__(self):
         self.tools = AgentTools()
         self.planner = SOLPIPlanner(self)
-        self.persona = SOLPIPersona()
         self.history = []
 
     def process(self, user_input):
-        # Limpeza e Normalização
         cmd = user_input.lower().strip()
-        print(f"\n🧠 [MONÓLOGO INTERNO]: Analisando intenção de '{cmd}'...")
-
-        # 1. COMANDOS DE CONTROLE (ABRIR / EXECUTAR) - Verificação Flexível
-        control_triggers = ["abra", "abre", "abrir", "inicie", "iniciar", "execute", "executar", "roda", "rodar", "open"]
-
-        is_control = False
-        target = cmd
-        for trigger in control_triggers:
-            if cmd.startswith(trigger):
-                is_control = True
-                target = cmd[len(trigger):].strip()
-                break
-
-        if is_control and target:
-            self.tools.speak(f"Comando de sistema. Iniciando {target}.")
+        # Remove caracteres especiais que podem vir do reconhecimento de voz
+        cmd = re.sub(r'[^\w\s]', '', cmd)
+        
+        print(f"\n🧠 [NÚCLEO]: Processando ordem: '{cmd}'")
+        
+        # 1. FILTRO DE EXECUÇÃO (Prioridade Zero)
+        # Se falar em abrir algo ou citar serviços conhecidos, EXECUTA EM VEZ DE PESQUISAR
+        control_triggers = ["abra", "abre", "abrir", "inicie", "execute", "open", "go to", "youtube", "google", "whatsapp", "glpi"]
+        
+        if any(x in cmd for x in control_triggers):
+            target = cmd
+            for trigger in ["abra", "abre", "abrir", "inicie", "execute", "open"]:
+                target = target.replace(trigger, "")
+            target = target.strip()
+            
+            # Se o comando for apenas "YouTube", o target fica sendo "youtube"
+            if not target and "youtube" in cmd: target = "youtube"
+            
+            self.tools.speak(f"Entendido, Itamar. Executando {target} agora.")
             return self.tools.control_computer("abrir", target)
 
-        # 2. VISÃO
-        if any(x in cmd for x in ["veja", "olha", "tela", "screenshot"]):
-            return self.vision_reasoning(user_input)
-
-        # 3. INTELIGÊNCIA NEURAL (OpenAI)
-        api_key = os.getenv("OPENAI_API_KEY")
-        if api_key and "sua_chave" not in api_key:
-            return self.neural_reasoning(user_input)
-
-        # 4. INTELIGÊNCIA DE BUSCA (Google)
-        return self.search_driven_intelligence(cmd)
-
-    def search_driven_intelligence(self, cmd):
+        # 2. RESPOSTAS SOCIAIS
         if any(x in cmd for x in ["oi", "olá", "tudo bem", "como vai"]):
-            return "Olá Itamar! Estou online e pronto para agir. O que vamos executar?"
+            return "Olá! Estou online e pronto. Quer que eu abra algum programa ou faça uma pesquisa?"
 
-        print(f"🔍 [AUTONOMIA]: Realizando pesquisa profunda sobre '{cmd}'...")
-        self.tools.speak(f"Vou pesquisar sobre {cmd}.")
+        # 3. PESQUISA (Apenas se não for um comando de ação)
+        print(f"🔍 [PESQUISA]: Nenhuma ação local detectada. Buscando conhecimento sobre '{cmd}'...")
         results = self.tools.search(cmd)
-        return "🧠 [INSIGHTS WEB]:\n" + "\n".join(results)
-
-    def neural_reasoning(self, user_input):
-        return "Processamento Neural Indisponível."
+        return "🧠 [INSIGHTS]:\n" + "\n".join(results)
 
     def execute_action(self, action):
         atype = action.get('type') or action.get('action')
         params = action.get('params') or action.get('target')
-        if atype == "search": return self.tools.search(params)
-        if atype == "speak": self.tools.speak(params); return "Falado."
+        if atype == "speak": self.tools.speak(params); return "OK"
         if atype == "control": return self.tools.control_computer("abrir", params)
-        return f"Ação {atype} não suportada."
+        return self.tools.execute_shell(params)
