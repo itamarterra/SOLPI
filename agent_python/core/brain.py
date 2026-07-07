@@ -90,8 +90,37 @@ class SOLPIBrain:
             return self.expert_reasoning(user_input)
 
     def expert_reasoning(self, user_input):
-        # ... (Mantém a lógica de fallback robusta)
-        return "Modo Expert: " + str(self.planner.create_mission(user_input))
+        """Lógica Especialista (Minha base de conhecimento codificada)."""
+        cmd = user_input.lower()
+
+        # Missões Pré-definidas (Skills complexas)
+        mission = self.planner.create_mission(user_input)
+        if mission:
+            results = []
+            for step in mission:
+                results.append(self.execute_action(step))
+            return "🚀 MISSÃO EXECUTADA:\n" + "\n".join([str(r) for r in results])
+
+        # Comandos de Controle Direto
+        if any(x in cmd for x in ["abra", "inicie", "execute"]):
+            target = cmd.replace("abra", "").replace("inicie", "").replace("execute", "").strip()
+            return self.tools.control_computer("abrir", target)
+
+        if "pesquise" in cmd:
+            query = cmd.replace("pesquise", "").strip()
+            return "\n".join(self.tools.search(query))
+
+        if user_input.startswith("$"):
+            return self.tools.execute_shell(user_input[1:].strip())
+
+        # Conversação Básica (Human-like fallback)
+        if any(x in cmd for x in ["oi", "olá", "bom dia", "boa tarde", "boa noite"]):
+            return "Olá Itamar! Estou ativo e monitorando tudo. Como posso te ajudar agora?"
+
+        if any(x in cmd for x in ["tudo bem", "como vai"]):
+            return "Tudo excelente por aqui! Operando com 100% de eficiência. O que temos para hoje?"
+
+        return "Recebi sua mensagem. No momento estou operando em Modo Expert. Você quer que eu realize alguma pesquisa, abra um programa ou verifique o sistema?"
 
     def execute_action(self, action):
         """Executor Universal com Tratamento de Erros Recursivo."""
