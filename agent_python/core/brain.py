@@ -25,12 +25,22 @@ class SOLPIBrain:
         if any(x in user_input.lower() for x in ["veja", "olha", "tela", "screenshot"]):
             return self.vision_reasoning(user_input)
 
-        # 2. INTELIGÊNCIA NEURAL (Se houver chave)
+        # 2. COMANDOS DE CONTROLE (Prioridade Máxima)
+        control_triggers = ["abra", "abrir", "inicie", "iniciar", "execute", "executar", "open"]
+        if any(x in cmd for x in control_triggers):
+            target = cmd
+            for trigger in control_triggers:
+                target = target.replace(trigger, "")
+            target = target.strip()
+            self.tools.speak(f"Comando detectado. Iniciando {target}.")
+            return self.tools.control_computer("abrir", target)
+
+        # 3. INTELIGÊNCIA NEURAL (Se houver chave)
         api_key = os.getenv("OPENAI_API_KEY")
         if api_key and "sua_chave" not in api_key:
             return self.neural_reasoning(user_input)
 
-        # 3. INTELIGÊNCIA DE BUSCA (Simulação de Cérebro sem custo)
+        # 4. INTELIGÊNCIA DE BUSCA (Simulação de Cérebro sem custo)
         return self.search_driven_intelligence(user_input)
 
     def search_driven_intelligence(self, user_input):

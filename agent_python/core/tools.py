@@ -133,12 +133,29 @@ class AgentTools:
 
     @staticmethod
     def control_computer(action, target=None):
-        """Controle de Interface Humana (HCI) v1.1"""
+        """Controle de Interface Humana (HCI) v1.2: Suporte Web Nativo"""
         import pyautogui
         import pygetwindow as gw
+        import webbrowser
 
         try:
             if action == "abrir":
+                # Se for um site conhecido, abre no navegador
+                web_targets = {
+                    "youtube": "https://www.youtube.com",
+                    "google": "https://www.google.com",
+                    "gmail": "https://mail.google.com",
+                    "whatsapp": "https://web.whatsapp.com",
+                    "glpi": "http://localhost:8081"
+                }
+
+                clean_target = target.lower().replace("o ", "").replace("a ", "").strip()
+
+                if clean_target in web_targets:
+                    webbrowser.open(web_targets[clean_target])
+                    return f"Navegando para {clean_target}..."
+
+                # Se não for site, tenta abrir como arquivo/programa
                 os.startfile(target)
                 return f"Abrindo {target}..."
 
