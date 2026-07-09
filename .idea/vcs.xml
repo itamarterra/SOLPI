@@ -2,5 +2,8 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/research/hermes-agent" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/research/openclaude" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/research/openclaw-mine" vcs="Git" />
   </component>
 </project>
