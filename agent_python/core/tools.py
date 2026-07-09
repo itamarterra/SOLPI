@@ -69,21 +69,30 @@ class AgentTools:
     @staticmethod
     def self_audit():
         """O Agente verifica se ele e seu ambiente estão saudáveis."""
+        from core.self_healing import SelfHealingEngine
+        healer = SelfHealingEngine(AgentTools)
+        
         report = []
         # 1. Checa Banco de Dados
         if AgentTools.is_db_online():
             report.append("🗄️ Banco GLPI: ONLINE")
         else:
-            report.append("⚠️ Banco GLPI: OFFLINE. Tentando diagnosticar...")
-            # Futura skill: docker-compose restart db
+            report.append("⚠️ Banco GLPI: OFFLINE. Iniciando Auto-Cura...")
+            fix_res = healer.diagnose_and_fix("DATABASE_OFFLINE")
+            report.append(f"🛠️ Resultado do Reparo: {fix_res}")
             
         # 2. Checa Espaço em Disco
         import shutil
         total, used, free = shutil.disk_usage("/")
-        report.append(f"💾 Disco: {free // (2**30)}GB Livres")
+        free_gb = free // (2**30)
+        report.append(f"💾 Disco: {free_gb}GB Livres")
+        
+        if free_gb < 2:
+            report.append("⚠️ Espaço Crítico! Iniciando Limpeza...")
+            report.append(healer.diagnose_and_fix("DISK_FULL"))
         
         # 3. Checa Memória do Agente
-        report.append("🧠 Cérebro Cognitivo: Estável v12.0")
+        report.append("🧠 Cérebro Cognitivo: Estável v14.0")
         return report
 
     @staticmethod
