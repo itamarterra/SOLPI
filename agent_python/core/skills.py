@@ -53,7 +53,7 @@ class SkillManager:
         """Permite que o Agente aprenda e salve uma nova skill com código vivo."""
         folder_path = os.path.join(self.skills_dir, name)
         os.makedirs(folder_path, exist_ok=True)
-
+        
         # 1. Salva o Manifesto (SKILL.md)
         file_path = os.path.join(folder_path, "SKILL.md")
         content = f"---\nname: {name}\ndescription: \"{description}\"\n---\n\n# {name}\n\n{instruction}"
@@ -68,5 +68,5 @@ class SkillManager:
             self.skills[name] = {"content": content, "description": description, "active": True, "logic": logic_path}
         else:
             self.skills[name] = {"content": content, "description": description, "active": True}
-
+            
         return folder_path
