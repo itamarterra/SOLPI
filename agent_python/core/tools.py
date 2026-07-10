@@ -96,6 +96,31 @@ class AgentTools:
         return report
 
     @staticmethod
+    def send_whatsapp(message):
+        """Envia um alerta técnico para o WhatsApp do Diretor via Evolution API."""
+        url = os.getenv("SOLPI_EVOLUTION_URL")
+        token = os.getenv("SOLPI_EVOLUTION_TOKEN")
+        instance = os.getenv("SOLPI_EVOLUTION_INSTANCE", "SOLPI")
+        phone = os.getenv("DIRECTOR_PHONE")
+
+        if not all([url, token, phone]):
+            print("⚠️ Erro: Configurações de WhatsApp incompletas no .env")
+            return False
+
+        endpoint = f"{url}/message/sendText/{instance}"
+        headers = {"apikey": token, "Content-Type": "application/json"}
+        payload = {
+            "number": phone,
+            "options": {"delay": 1200, "presence": "composing", "linkPreview": False},
+            "textMessage": {"text": f"🤖 *SOLPI AGENT v15.0*\n\n{message}"}
+        }
+
+        try:
+            res = requests.post(endpoint, headers=headers, json=payload, timeout=10)
+            return res.status_code in [200, 201]
+        except: return False
+
+    @staticmethod
     def speak(text):
         try:
             import pyttsx3

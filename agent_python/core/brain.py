@@ -63,7 +63,11 @@ class SOLPIBrain:
     def heartbeat_check(self):
         """Rotina proativa executada pelo Agente sozinho."""
         audit = self.tools.self_audit()
-        # Se o banco estiver offline, o Agente pode tentar agir
-        if "OFFLINE" in str(audit):
-            self.tools.speak("Aviso: Detectei que o banco de dados caiu. Vou tentar uma Skill de recuperação.")
+        
+        # Se houver uma ação de cura ou erro crítico, notifica o WhatsApp
+        if any(x in str(audit) for x in ["OFFLINE", "Reparo", "Limpeza"]):
+            report = "\n".join(audit)
+            self.tools.send_whatsapp(f"🚨 *ALERTA DE AUTO-CURA*\n\n{report}")
+            self.tools.speak("Detectei uma irregularidade e enviei o relatório para o seu WhatsApp.")
+
         return audit

@@ -51,21 +51,17 @@ class SOLPIAgent:
     def proactive_observer(self):
         """O Agente vigia o sistema e fala com você se notar algo importante."""
         while self.active:
-            # 1. Executa Auto-Auditoria e Auto-Cura (v14.0)
-            audit_report = self.brain.tools.self_audit()
+            # Executa a inteligência proativa do cérebro (v15.0)
+            self.brain.heartbeat_check()
             
-            # Se houve alguma ação de cura, avisa o Diretor
-            for line in audit_report:
-                if "Resultado do Reparo" in line or "Limpeza" in line:
-                    print(f"\n📢 [AUTO-CURA]: {line}")
-                    self.brain.tools.speak(f"Atenção Itamar, executei um protocolo de auto cura. {line}")
-            
-            # 2. Verificar carga do sistema
+            # Verificar carga do sistema
             try:
                 import psutil
                 cpu = psutil.cpu_percent()
                 if cpu > 90:
-                    self.brain.tools.speak("Uso do processador crítico. Monitorando processos...")
+                    msg = "⚠️ *ALERTA DE PERFORMANCE*\nUso de CPU acima de 90%."
+                    self.brain.tools.send_whatsapp(msg)
+                    self.brain.tools.speak("Uso do processador crítico. Alerta enviado.")
             except: pass
             
             time.sleep(300) # Auditoria a cada 5 minutos
