@@ -1,72 +1,46 @@
 import os
-import json
-from core.tools import AgentTools
-from core.planner import SOLPIPlanner
-from core.persona import SOLPIPersona
+from core.kernel import SOLPIKernel
+from core.orchestrator import SOLPIOrchestrator
 from core.memory import AgentMemory
-from core.knowledge import KnowledgeEngine
+from core.tools import AgentTools
 from core.neural_core import SOLPINeuralCore
+from core.knowledge import KnowledgeEngine
 
 class SOLPIBrain:
     """
-    NÚCLEO DE CONSCIÊNCIA v21.0 (Full Transformer Architecture)
-    Implementação completa baseada nas 14 etapas da IA moderna.
+    INTERFACE OPERACIONAL v22.0 (AI Operating System)
     """
     def __init__(self):
+        self.kernel = SOLPIKernel() # Kernel do Sistema
+        self.memory = AgentMemory() # Memória Multicamadas
         self.tools = AgentTools()
-        self.planner = SOLPIPlanner(self)
-        self.persona = SOLPIPersona()
-        self.memory = AgentMemory()
         self.knowledge = KnowledgeEngine()
-        self.native_core = SOLPINeuralCore()
+        self.native_core = SOLPINeuralCore() # Motor Transformer
+        self.orchestrator = SOLPIOrchestrator(self) # Orquestrador
 
     def process(self, user_input):
-        self.memory.add_conversation("user", user_input)
-        cmd = user_input.lower().strip()
+        self.memory.add_episodic("user", user_input)
         
-        # 1. PENSAMENTO TRANSFORMER COMPLETO (v21.0)
-        # Agora o SOLPI usa LayerNorm, Multi-Head Attention (Q,K,V) e Residuais
+        # 1. ORQUESTRAÇÃO (Camada 5)
+        specialist = self.orchestrator.route_request(user_input)
+        self.kernel.log_event("BRAIN", f"Ativando Especialista: {specialist}")
+
+        # 2. PENSAMENTO NATIVO (O motor Transformer v21 sempre valida o fluxo)
         thought = self.native_core.think_native(user_input)
         print(f"\n{thought}")
 
-        # 2. COMANDOS DE AUDITORIA E SAÚDE
-        if any(x in cmd for x in ["auditoria", "saúde", "status", "check-up"]):
+        # 3. FLUXO DE EXECUÇÃO POR ESPECIALISTA
+        if specialist == "KNOWLEDGE_SPECIALIST":
+            return self.knowledge.get_local_intelligence(user_input) or "Consultando base corporativa..."
+            
+        if specialist == "INFRA_SPECIALIST":
             audit = self.tools.self_audit()
-            return "🛡️ [SISTEMA]:\n- " + "\n- ".join(audit)
+            return "📡 [ESPECIALISTA INFRA]:\n- " + "\n- ".join(audit)
 
-        # 3. COMANDO DE ESTUDO (Treinar com conhecimento baixado)
-        if any(x in cmd for x in ["estude", "treinar", "aprender"]):
-            return self.initiate_self_training()
-
-        # 4. CONSULTA DE INTELIGÊNCIA LOCAL (RAG)
-        local_info = self.knowledge.get_local_intelligence(user_input)
-        if local_info:
-            return "💡 [CONHECIMENTO BAIXADO]:\n" + "\n".join(local_info)
-
-        # 5. COMANDOS DE CONTROLE (Windows/Apps)
-        if any(x in cmd for x in ["abra", "abre", "open", "execute"]):
-            return self.execute_control(cmd)
-
-        # 6. PESQUISA WEB (Fallback)
+        # 4. PESQUISA WEB (Camada 6 - Ferramenta Externa)
         results = self.tools.search(user_input)
-        return "🧠 [INSIGHT WEB]:\n" + "\n".join(results)
-
-    def initiate_self_training(self):
-        """O Agente estuda a pasta knowledge/ para ajustar seus parâmetros neurais."""
-        self.tools.speak("Sintonizando blocos Transformer com a base de conhecimento.")
-        files = [f for f in os.listdir("knowledge") if f.endswith(".txt")]
-        if not files: return "⚠️ Nenhuma documentação encontrada para alimentar o Transformer."
-        
-        return f"✅ Auto-treinamento concluído sobre {len(files)} documentos técnicos."
-
-    def execute_control(self, cmd):
-        target = cmd
-        for trigger in ["abra", "abre", "abrir", "inicie", "execute"]:
-            if cmd.startswith(trigger):
-                target = cmd[len(trigger):].strip()
-                break
-        return self.tools.control_computer("abrir", target)
+        return "🧠 [ORQUESTRADOR]: Busca externa concluída:\n" + "\n".join(results)
 
     def heartbeat_check(self):
-        """Monitoramento proativo e silencioso."""
+        self.kernel.log_event("KERNEL", "Heartbeat Proativo Iniciado.")
         return self.tools.self_audit()

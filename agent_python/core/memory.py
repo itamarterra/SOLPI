@@ -4,45 +4,30 @@ from datetime import datetime
 
 class AgentMemory:
     """
-    MEMÓRIA SEMÂNTICA v2.0
-    Armazena conversas, fatos aprendidos e preferências do Diretor.
+    MEMÓRIA MULTICAMADAS v3.0 (Enterprise Standard)
     """
-    def __init__(self, memory_file="memory.json"):
-        self.memory_file = memory_file
-        self.data = {"conversations": [], "facts": {}, "preferences": {}}
+    def __init__(self):
+        self.short_term = []      # Contexto da conversa atual
+        self.medium_term = {}    # Histórico de interações recentes
+        self.long_term = {}      # Fatos autorizados persistentes
+        self.corporate = {}      # Bases oficiais baixadas
         self.load()
 
     def load(self):
-        if os.path.exists(self.memory_file):
-            try:
-                with open(self.memory_file, 'r', encoding='utf-8') as f:
-                    self.data = json.load(f)
-            except: pass
+        if os.path.exists("long_term_memory.json"):
+            with open("long_term_memory.json", "r") as f:
+                self.long_term = json.load(f)
 
     def save(self):
-        with open(self.memory_file, 'w', encoding='utf-8') as f:
-            json.dump(self.data, f, indent=4, ensure_ascii=False)
+        with open("long_term_memory.json", "w") as f:
+            json.dump(self.long_term, f, indent=4)
 
-    def add_conversation(self, role, content):
-        self.data["conversations"].append({
-            "timestamp": datetime.now().isoformat(),
-            "role": role, 
-            "content": content
-        })
-        if len(self.data["conversations"]) > 100:
-            self.data["conversations"] = self.data["conversations"][-100:]
-        self.save()
+    def add_episodic(self, role, content):
+        """Memória de Curto Prazo (Interação atual)"""
+        self.short_term.append({"t": datetime.now().isoformat(), "r": role, "c": content})
+        if len(self.short_term) > 20: self.short_term.pop(0)
 
     def learn_fact(self, key, value):
-        self.data["facts"][key] = {
-            "value": value,
-            "learned_at": datetime.now().isoformat()
-        }
+        """Memória de Longo Prazo (Fatos autorizados)"""
+        self.long_term[key] = value
         self.save()
-
-    def get_context(self):
-        """Retorna os últimos fatos e conversas para o cérebro."""
-        return {
-            "recent_history": self.data["conversations"][-5:],
-            "important_facts": self.data["facts"]
-        }
