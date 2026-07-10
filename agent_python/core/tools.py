@@ -138,12 +138,9 @@ class AgentTools:
 
     @staticmethod
     def speak(text):
-        try:
-            import pyttsx3
-            engine = pyttsx3.init()
-            engine.say(text)
-            engine.runAndWait()
-        except: print(f"🤖: {text}")
+        """Voz desativada a pedido do Diretor v17.0"""
+        print(f"🤖 [MENSAGEM]: {text}")
+        pass
 
     @staticmethod
     def is_db_online():

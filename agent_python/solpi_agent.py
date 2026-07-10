@@ -15,7 +15,7 @@ class SOLPIAgent:
         os.system('cls' if os.name == 'nt' else 'clear')
         db_status = "ONLINE ✅" if self.brain.tools.is_db_online() else "OFFLINE 🏠"
         
-        print(f"🧬 SOLPI AGENT: NEURAL ARCHITECT MODE (v16.0)")
+        print(f"🧬 SOLPI AGENT: SILENT INTELLIGENCE (v17.0)")
         print("-" * 50)
         print(f"Status do Docker/DB: {db_status}")
         print(f"Cérebro Cognitivo: ATIVO 🧠")
