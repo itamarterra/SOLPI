@@ -49,6 +49,16 @@
             "timestamp": "2026-07-10T02:07:28.815228",
             "role": "assistant",
             "content": "🧠 [INSIGHT]: Descobri o seguinte sobre 'boa noite':\nParaná registra alta no número de mulheres empreendedoras - G1\nJornal Midiamax. . 😱 SEM MIMIMI APOSTOU O TABACO? ✅ Veja essas e mais notícias em https://midiamax.com.br/ - facebook.com\nPrograma Boa Noite Rio Branco aborda drama de Fabiula Fleming em corrida contra o tempo por tratamento de filhos com doença rara - o rio branco"
+        },
+        {
+            "timestamp": "2026-07-10T02:11:02.924228",
+            "role": "user",
+            "content": "boa noite"
+        },
+        {
+            "timestamp": "2026-07-10T02:11:15.267637",
+            "role": "user",
+            "content": "abre o youtube"
         }
     ],
     "facts": {},
