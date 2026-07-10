@@ -24,15 +24,28 @@ class SOLPIBrain:
         
         print(f"\n🧠 [COGNIÇÃO]: Consultando base de conhecimento...")
 
-        # 1. COMANDO DE DOWNLOAD DE INTELIGÊNCIA
-        if "baixe" in cmd and "site" in cmd:
-            # Ex: "Baixe o site https://exemplo.com com o nome manual-zabbix"
-            import re
-            url = re.search(r'https?://\S+', user_input)
-            name = re.search(r'nome\s+(\S+)', user_input)
-            if url and name:
-                return self.knowledge.download_site(url.group(), name.group(1))
-            return "❌ Formato: 'Baixe o site [URL] com o nome [NOME]'"
+        # 1. MISSÃO DE PESQUISA ESTRATÉGICA (v18.1)
+        if any(x in cmd for x in ["pesquisa por toda a internet", "documentos que precisamos", "varredura estratégica"]):
+            self.tools.speak("Iniciando varredura estratégica global para coletar documentação técnica do SOLPI.")
+            
+            targets = [
+                "Zabbix 7.4 API documentation triggers manual",
+                "GLPI 11 developer documentation REST API",
+                "Evolution API WhatsApp interactive buttons documentation",
+                "Mikrotik Cisco HP SNMP MIBs library for network mapping",
+                "Digital Twin ITSM architecture whitepapers 2026"
+            ]
+            
+            report = ["📡 [RELATÓRIO DE VARREDURA ESTRATÉGICA]:"]
+            for target in targets:
+                print(f"🔍 [SEARCHING]: {target}...")
+                results = self.tools.search(target)
+                report.append(f"\n📂 *Tópico: {target}*")
+                report.append("\n".join(results[:2])) # Pega os 2 melhores de cada
+                
+            response = "\n".join(report)
+            self.tools.speak("Varredura concluída. Encontrei as fontes necessárias para nossa evolução.")
+            return response
 
         # 2. CONSULTA LOCAL (Saber o que já foi baixado)
         local_info = self.knowledge.get_local_intelligence(user_input)
