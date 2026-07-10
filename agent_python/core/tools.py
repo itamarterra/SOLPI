@@ -92,7 +92,7 @@ class AgentTools:
             report.append(healer.diagnose_and_fix("DISK_FULL"))
         
         # 3. Checa Memória do Agente
-        report.append("🧠 Cérebro Cognitivo: Estável v14.0")
+        report.append("🧠 Cérebro Cognitivo: Estável v16.0")
         return report
 
     @staticmethod

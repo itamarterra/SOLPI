@@ -15,13 +15,13 @@ class SOLPIAgent:
         os.system('cls' if os.name == 'nt' else 'clear')
         db_status = "ONLINE ✅" if self.brain.tools.is_db_online() else "OFFLINE 🏠"
         
-        print(f"🧬 SOLPI AGENT: EVOLUTION MODE (v5.1)")
+        print(f"🧬 SOLPI AGENT: NEURAL ARCHITECT MODE (v16.0)")
         print("-" * 50)
         print(f"Status do Docker/DB: {db_status}")
         print(f"Cérebro Cognitivo: ATIVO 🧠")
         print("-" * 50)
         
-        self.brain.tools.speak(f"Olá Itamar! Iniciei o protocolo de evolução. Estou vigiando o sistema.")
+        self.brain.tools.speak(f"Olá Itamar! Consciência operacional v16.0 carregada. Como vamos revolucionar o TI hoje?")
 
         # Inicia o Observador Proativo em segundo plano
         observer = threading.Thread(target=self.proactive_observer, daemon=True)
@@ -29,7 +29,7 @@ class SOLPIAgent:
 
         while self.active:
             try:
-                print("\n[Peça uma tarefa, pesquisa ou use '$' para comandos]")
+                print("\n[Comando, Missão ou use '$' para terminal]")
                 user_input = input("👤 [Itamar]: ").strip()
                 
                 if not user_input:
@@ -49,9 +49,9 @@ class SOLPIAgent:
             except Exception as e: print(f"⚠️ Erro: {e}")
 
     def proactive_observer(self):
-        """O Agente vigia o sistema e fala com você se notar algo importante."""
+        """O Agente vigia o sistema e age proativamente."""
         while self.active:
-            # Executa a inteligência proativa do cérebro (v15.0)
+            # Executa a inteligência proativa do cérebro
             self.brain.heartbeat_check()
             
             # Verificar carga do sistema
