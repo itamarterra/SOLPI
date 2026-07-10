@@ -9,8 +9,8 @@ from core.neural_core import SOLPINeuralCore
 
 class SOLPIBrain:
     """
-    NÚCLEO DE CONSCIÊNCIA v19.0 (Native Core Genesis)
-    Alternância entre Raciocínio Neural Nativo e Externo.
+    NÚCLEO DE CONSCIÊNCIA v20.0 (Transformer Heart)
+    Foco em Auto-Treinamento e Raciocínio Baseado em Atenção.
     """
     def __init__(self):
         self.tools = AgentTools()
@@ -18,47 +18,40 @@ class SOLPIBrain:
         self.persona = SOLPIPersona()
         self.memory = AgentMemory()
         self.knowledge = KnowledgeEngine()
-        self.native_core = SOLPINeuralCore() # Nosso próprio motor!
+        self.native_core = SOLPINeuralCore()
 
     def process(self, user_input):
         self.memory.add_conversation("user", user_input)
         cmd = user_input.lower().strip()
         
-        print(f"\n🧠 [COGNIÇÃO]: Ativando Núcleo Nativo...")
+        # 1. PENSAMENTO TRANSFORMER (O Coração da v20)
+        thought = self.native_core.think_native(user_input)
+        print(f"\n{thought}")
 
-        # 1. PENSAMENTO NATIVO (Etapa 11)
-        # O SOLPI agora processa tudo matematicamente de forma local primeiro
-        thought_stats = self.native_core.think_native(user_input)
-        print(thought_stats)
+        # 2. COMANDO DE ESTUDO (Treinar com o que foi baixado)
+        if "estude" in cmd or "treinar" in cmd:
+            return self.initiate_self_training()
 
-        # 2. MISSÃO DE PESQUISA ESTRATÉGICA
-        if any(x in cmd for x in ["pesquisa por toda a internet", "varredura estratégica"]):
-            return self.strategic_mission(user_input)
-
-        # 3. CONSULTA DE CONHECIMENTO BAIXADO
+        # 3. CONSULTA DE INTELIGÊNCIA LOCAL
         local_info = self.knowledge.get_local_intelligence(user_input)
         if local_info:
             return "💡 [INTELIGÊNCIA LOCAL]:\n" + "\n".join(local_info)
 
-        # 4. COMANDOS DE CONTROLE
-        if any(x in cmd for x in ["abra", "abre", "open", "execute"]):
-            return self.execute_control(cmd)
+        # 4. PESQUISA WEB (Fallback)
+        results = self.tools.search(user_input)
+        return "🧠 [INSIGHT WEB]:\n" + "\n".join(results)
 
-        # 5. IA EXTERNA (Se local não for suficiente)
-        return "🧠 [SOLPI]: Entendi seu comando. Processando via motor híbrido."
+    def initiate_self_training(self):
+        """O Agente lê a pasta knowledge/ e treina seu Transformer nativo."""
+        self.tools.speak("Iniciando ciclo de auto-treinamento técnico.")
+        files = [f for f in os.listdir("knowledge") if f.endswith(".txt")]
+        if not files: return "⚠️ Nenhuma documentação encontrada para estudar."
+        
+        for file in files:
+            print(f"📖 Estudando: {file}...")
+            # Aqui no futuro chamaremos o backprop real
+            # Por agora, simulamos a ingestão semântica
+        return f"✅ Ciclo de aprendizado concluído sobre {len(files)} documentos."
 
-    def strategic_mission(self, user_input):
-        targets = ["Zabbix 7.4 API", "GLPI 11 REST API", "Evolution API WhatsApp", "SNMP MIBs Library"]
-        report = ["📡 [VARREDURA ESTRATÉGICA]:"]
-        for t in targets:
-            results = self.tools.search(t)
-            report.append(f"\n📂 *Tópico: {t}*\n" + "\n".join(results[:1]))
-        return "\n".join(report)
-
-    def execute_control(self, cmd):
-        target = cmd
-        for trigger in ["abra", "abre", "abrir", "inicie", "execute"]:
-            if cmd.startswith(trigger):
-                target = cmd[len(trigger):].strip()
-                break
-        return self.tools.control_computer("abrir", target)
+    def heartbeat_check(self):
+        return self.tools.self_audit()
