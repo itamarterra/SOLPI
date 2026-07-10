@@ -1,42 +1,26 @@
-class SOLPIOrchestrator:
+class SOLPISupervisor:
     """
-    ORQUESTRADOR COGNITIVO v2.0
-    Implementa o Ciclo de Planejamento (Etapa 5).
+    PACOTE 1603: AGENT SUPERVISOR v3.0
+    Coordena Especialistas em Pesquisa, Código e Infraestrutura.
     """
     def __init__(self, brain):
         self.brain = brain
         self.kernel = brain.kernel
 
-    def create_plan(self, user_input):
-        """Desenha os passos antes de agir."""
+    def delegate(self, user_input):
         cmd = user_input.lower()
-        plan = []
-        
-        self.kernel.log_event("PLANNER", f"Criando plano para: {user_input[:30]}")
+        self.kernel.log_event("SUPERVISOR", f"Iniciando delegação para: {user_input[:20]}...")
 
-        # Exemplo de decomposição de plano complexo
-        if any(x in cmd for x in ["conserta", "arruma", "problema"]):
-            plan = [
-                {"step": 1, "action": "AUDIT", "desc": "Verificar saúde do sistema"},
-                {"step": 2, "action": "LOG_ANALYSIS", "desc": "Analisar erros de PHP"},
-                {"step": 3, "action": "REPAIR", "desc": "Tentar auto-cura"}
-            ]
-        elif any(x in cmd for x in ["como", "explica", "manual"]):
-            plan = [
-                {"step": 1, "action": "RAG_SEARCH", "desc": "Consultar base local"},
-                {"step": 2, "action": "WEB_RESEARCH", "desc": "Complementar com internet"}
-            ]
-        else:
-            plan = [{"step": 1, "action": "DIRECT_RESPONSE", "desc": "Processamento imediato"}]
-            
-        return plan
+        # 1. Especialista em Infraestrutura (Zabbix/Docker)
+        if any(x in cmd for x in ["banco", "servidor", "status", "reinicie", "zabbix"]):
+            return "INFRA_EXPERT", "Analisando telemetria e integridade de containers."
 
-    def route_request(self, user_input):
-        """Decide o especialista baseado no plano."""
-        plan = self.create_plan(user_input)
-        main_action = plan[0]["action"]
-        
-        if main_action == "RAG_SEARCH": return "KNOWLEDGE_SPECIALIST"
-        if main_action == "AUDIT": return "INFRA_SPECIALIST"
+        # 2. Especialista em Desenvolvimento (Python/PHP)
+        if any(x in cmd for x in ["código", "python", "php", "corrija", "script"]):
+            return "DEV_EXPERT", "Iniciando análise de sintaxe e lógica de engenharia."
 
-        return "GENERAL_REASONER"
+        # 3. Especialista em Conhecimento (RAG/Documentação)
+        if any(x in cmd for x in ["como", "manual", "procedimento", "baixe"]):
+            return "KNOWLEDGE_EXPERT", "Consultando base de dados corporativa e RAG."
+
+        return "GENERALIST", "Processamento neural genérico."

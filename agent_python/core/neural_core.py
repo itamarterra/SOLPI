@@ -1,43 +1,50 @@
 import numpy as np
 from core.tokenizer import SOLPITokenizer
-from core.embeddings import SOLPIEmbeddings
-from core.positional_encoding import SOLPIPositionalEncoding
 from core.attention import SOLPISelfAttention
+from core.layer_norm import SOLPIRMSNorm
 from core.feed_forward import SOLPIFeedForward
 from core.config import SOLPIConfig
 
+class SOLPIExpertLayer:
+    """PACOTE 0103: Mixture of Experts (MoE) Specialist"""
+    def __init__(self, embed_dim):
+        self.experts = [SOLPIFeedForward(embed_dim, embed_dim * 4) for _ in range(4)] # 4 Especialistas
+        self.router = np.random.randn(embed_dim, 4) # Roteador Neural
+
+    def forward(self, x):
+        # Roteamento: decide qual especialista melhor atende este token
+        router_logits = np.dot(x, self.router)
+        expert_idx = np.argmax(router_logits, axis=-1)
+        
+        # Executa apenas o especialista escolhido (Sparse MoE)
+        out = np.zeros_like(x)
+        for i in range(4):
+            mask = (expert_idx == i)
+            if np.any(mask):
+                out[mask] = self.experts[i].forward(x[mask])
+        return out
+
 class SOLPINeuralCore:
-    """
-    CÉREBRO v27.0 - Evoluindo para um Transformer Real.
-    Integrando Pacotes 04, 05, 06, 07, 08 e 10.
-    """
     def __init__(self):
         self.config = SOLPIConfig()
         self.tokenizer = SOLPITokenizer()
-        
-        # Módulos Reais
-        self.embeddings = SOLPIEmbeddings(self.config.VOCAB_SIZE, self.config.EMBED_DIM)
-        self.pos_encoding = SOLPIPositionalEncoding(self.config.MAX_SEQ_LEN, self.config.EMBED_DIM)
+        self.norm = SOLPIRMSNorm(self.config.EMBED_DIM)
         self.attention = SOLPISelfAttention(self.config.EMBED_DIM)
-        self.feed_forward = SOLPIFeedForward(self.config.EMBED_DIM, self.config.EMBED_DIM * 4)
+        self.moe = SOLPIExpertLayer(self.config.EMBED_DIM) # Mixture of Experts
+        
+        self.embeddings = np.random.randn(self.config.VOCAB_SIZE, self.config.EMBED_DIM) * 0.01
 
     def think_native(self, text):
-        # 1. Tokenização (Pacote 04)
         tokens = self.tokenizer.encode(text)
-        if not tokens: return "Entrada vazia."
-
-        # 2. Embeddings Treináveis (Pacote 06)
-        x = self.embeddings.forward(tokens)
+        if not tokens: return "Vazio"
         
-        # 3. Positional Encoding (Pacote 07)
-        x = self.pos_encoding.forward(x)
+        x = self.embeddings[tokens]
+        x = self.norm.forward(x)
         
-        # 4. Self-Attention QKV (Pacote 08)
+        # Fluxo MoE: Atenção -> Roteamento -> Especialista
         attn_out = self.attention.forward(x)
-        x = x + attn_out # Residual simples
+        x = x + attn_out
         
-        # 5. Feed Forward (Pacote 10)
-        ff_out = self.feed_forward.forward(x)
-        x = x + ff_out # Residual simples
+        x = x + self.moe.forward(x)
         
-        return f"🧠 [NATIVE-REAL-CORE v27]: Processamento espacial e sequencial concluído ({len(tokens)} tokens)."
+        return f"🧠 [MOE-CORE v29]: Processado via Roteamento de Especialistas Neurais."
