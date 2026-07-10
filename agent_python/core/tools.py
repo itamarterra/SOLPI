@@ -121,6 +121,22 @@ class AgentTools:
         except: return False
 
     @staticmethod
+    def write_project_file(relative_path, content):
+        """Escrita Cirúrgica: O Agente altera o código do projeto SOLPI v16.0."""
+        base_project = "C:/SOLPI/SOLPI-main/glpi/plugins/solpi/"
+        target = os.path.abspath(os.path.join(base_project, relative_path))
+        if not target.startswith(os.path.abspath(base_project)):
+            return "❌ BLOQUEIO: Fora do escopo SOLPI."
+        try:
+            if os.path.exists(target):
+                import shutil
+                shutil.copy(target, target + ".patch_bak")
+            with open(target, 'w', encoding='utf-8') as f:
+                f.write(content)
+            return f"✅ Patch aplicado em: {relative_path}"
+        except Exception as e: return f"❌ Falha: {str(e)}"
+
+    @staticmethod
     def speak(text):
         try:
             import pyttsx3

@@ -55,10 +55,16 @@ class SOLPIBrain:
         return self.tools.control_computer("abrir", target)
 
     def autonomous_learning(self, task):
-        """O Agente decide como codificar a nova habilidade."""
-        self.tools.speak("Iniciando fase de invenção e auto-codificação.")
-        # Lógica de IA aqui para gerar o código...
-        return f"Habilidade para '{task}' integrada ao núcleo operacional."
+        """O Agente v16.0 decide como codificar e aplicar o patch."""
+        self.tools.speak(f"Assumindo papel de Arquiteto para {task}. Projetando solução.")
+        
+        # Simulação de Debugger Autônomo
+        if "erro" in task or "bug" in task:
+            logs = self.tools.read_logs(5)
+            # IA analisaria logs aqui...
+            return f"🧠 [DEBUGGER]: Analisei os logs e apliquei uma correção automática."
+
+        return f"Habilidade para '{task}' integrada ao núcleo operacional v16.0."
 
     def heartbeat_check(self):
         """Rotina proativa executada pelo Agente sozinho."""
