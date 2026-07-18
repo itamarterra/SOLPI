@@ -24,8 +24,7 @@
     "autoload": {
         "psr-4": {
             "SOLPI\\": "src/"
-        }
-        ,
+        },
         "files": [
             "src/stubs/dbmysql.php",
             "src/stubs/ramsey_uuid.php",
@@ -36,12 +35,26 @@
     "require": {
         "php": "^8.3"
     },
+    "require-dev": {
+        "phpstan/phpstan": "^2.2",
+        "sebastian/phpcpd": "^6.0",
+        "phpunit/phpunit": "^11.0"
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:unit": "phpunit tests/Unit",
+        "test:integration": "phpunit tests/Integration",
+        "test:coverage": "phpunit --coverage-html coverage/ --coverage-text",
+        "analyse": "phpstan analyse src --level=max",
+        "duplicate-check": "phpcpd src/",
+        "check": [
+            "@test",
+            "@analyse",
+            "@duplicate-check"
+        ]
+    },
     "config": {
         "optimize-autoloader": true,
         "sort-packages": true
-    },
-    "require-dev": {
-        "phpstan/phpstan": "^2.2",
-        "sebastian/phpcpd": "^6.0"
     }
 }
