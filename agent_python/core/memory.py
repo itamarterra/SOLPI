@@ -1,45 +1,33 @@
-import sqlite3
+import json
 import os
+from datetime import datetime
 
-class LongTermMemory:
-    def __init__(self, db_path="memory/agent_memory.db"):
-        self.db_path = db_path
-        self._init_db()
+class AgentMemory:
+    """
+    MEMÓRIA MULTICAMADAS v3.0 (Enterprise Standard)
+    """
+    def __init__(self):
+        self.short_term = []      # Contexto da conversa atual
+        self.medium_term = {}    # Histórico de interações recentes
+        self.long_term = {}      # Fatos autorizados persistentes
+        self.corporate = {}      # Bases oficiais baixadas
+        self.load()
 
-    def _init_db(self):
-        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+    def load(self):
+        if os.path.exists("long_term_memory.json"):
+            with open("long_term_memory.json", "r") as f:
+                self.long_term = json.load(f)
 
-        # Tabela FTS5 para busca rápida de texto (Cérebro do Hermes)
-        cursor.execute('''
-            CREATE VIRTUAL TABLE IF NOT EXISTS memories
-            USING fts5(content, context, timestamp UNINDEXED)
-        ''')
+    def save(self):
+        with open("long_term_memory.json", "w") as f:
+            json.dump(self.long_term, f, indent=4)
 
-        conn.commit()
-        conn.close()
+    def add_episodic(self, role, content):
+        """Memória de Curto Prazo (Interação atual)"""
+        self.short_term.append({"t": datetime.now().isoformat(), "r": role, "c": content})
+        if len(self.short_term) > 20: self.short_term.pop(0)
 
-    def store(self, content, context="general"):
-        import datetime
-        timestamp = datetime.datetime.now().isoformat()
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO memories (content, context, timestamp) VALUES (?, ?, ?)",
-            (content, context, timestamp)
-        )
-        conn.commit()
-        conn.close()
-
-    def search(self, query, limit=5):
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        # Busca por relevância usando o motor FTS5
-        cursor.execute(
-            "SELECT content, context, timestamp FROM memories WHERE memories MATCH ? ORDER BY rank LIMIT ?",
-            (query, limit)
-        )
-        results = cursor.fetchall()
-        conn.close()
-        return results
+    def learn_fact(self, key, value):
+        """Memória de Longo Prazo (Fatos autorizados)"""
+        self.long_term[key] = value
+        self.save()

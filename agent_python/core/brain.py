@@ -1,41 +1,44 @@
 import os
-import json
-import re
+from core.kernel import SOLPIKernel
+from core.orchestrator import SOLPISupervisor
+from core.memory import AgentMemory
 from core.tools import AgentTools
-from core.planner import SOLPIPlanner
+from core.neural_core import SOLPINeuralCore
+from core.knowledge import KnowledgeEngine
 
 class SOLPIBrain:
+    """
+    INTERFACE COGNITIVA v29.0 (MoE & Multi-Agent)
+    Arquitetura de Supervisor com Especialistas internos e externos.
+    """
     def __init__(self):
+        self.kernel = SOLPIKernel()
+        self.memory = AgentMemory()
         self.tools = AgentTools()
-        self.planner = SOLPIPlanner(self)
-        self.last_context = None # Memória de curto prazo para interligação
+        self.knowledge = KnowledgeEngine()
+        self.native_core = SOLPINeuralCore() # Agora com MoE!
+        self.supervisor = SOLPISupervisor(self) # Supervisor de Agentes
 
     def process(self, user_input):
-        cmd = user_input.lower().strip()
-        cmd = re.sub(r'[^\w\s]', '', cmd)
+        self.memory.add_episodic("user", user_input)
         
-        print(f"\n🧠 [NÚCLEO]: Processando ordem: '{cmd}'")
-        
-        # 1. COMANDOS DE INTERAÇÃO COM O CONTEXTO ATUAL (Já aberto)
-        interaction_triggers = ["pause", "play", "para", "continua", "desce", "sobe", "pula"]
-        if any(x in cmd for x in interaction_triggers) and self.last_context:
-            self.tools.speak(f"Interagindo com {self.last_context}...")
-            return self.tools.interact_with_window(self.last_context, cmd)
+        # 1. SUPERVISÃO (Camada 10 - Orquestração)
+        expert, mission_desc = self.supervisor.delegate(user_input)
+        print(f"👮 [SUPERVISOR]: Delegado para {expert}. Missão: {mission_desc}")
 
-        # 2. COMANDOS DE ABERTURA (Nova Janela)
-        control_triggers = ["abra", "abre", "abrir", "inicie", "execute", "youtube", "google", "whatsapp"]
-        if any(x in cmd for x in control_triggers):
-            target = cmd
-            for trigger in ["abra", "abre", "abrir", "inicie", "execute"]:
-                target = target.replace(trigger, "")
-            target = target.strip()
-            if not target and "youtube" in cmd: target = "youtube"
+        # 2. PENSAMENTO MOE (Camada 1 - Arquitetura Sparse MoE)
+        thought = self.native_core.think_native(user_input)
+        print(f"{thought}")
+
+        # 3. EXECUÇÃO PELO ESPECIALISTA
+        if expert == "INFRA_EXPERT":
+            return "📡 [INFRA]: " + "\n- ".join(self.tools.self_audit())
             
-            self.last_context = target # Salva o que abriu
-            self.tools.speak(f"Abrindo {target}. Estou monitorando esta janela agora.")
-            return self.tools.control_computer("abrir", target)
+        if expert == "KNOWLEDGE_EXPERT":
+            return "📚 [RAG]: " + ("\n".join(self.knowledge.get_local_intelligence(user_input)) or "Sem dados locais.")
 
-        # 3. PESQUISA (Fallback)
-        self.last_context = "web"
-        results = self.tools.search(cmd)
-        return "🧠 [INSIGHTS]:\n" + "\n".join(results)
+        # 4. FALLBACK (Pesquisa Externa)
+        return "🧠 [GLOBAL]: " + "\n".join(self.tools.search(user_input)[:2])
+
+    def heartbeat_check(self):
+        return self.tools.self_audit()

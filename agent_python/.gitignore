@@ -1,0 +1,22 @@
+# Ignorar lixo de sistema e Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv
+env/
+venv/
+bin/
+
+# Ignorar lixo de Node/Javascript (se houver)
+node_modules/
+dist/
+build/
+
+# Ignorar Logs e Temporários
+logs/*.png
+logs/*.log
+*.bak
+.idea/
+.vscode/

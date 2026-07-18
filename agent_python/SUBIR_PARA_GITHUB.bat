@@ -1,34 +1,30 @@
 @echo off
 echo ===========================================
-echo   SOLPI AGENT - SINCRONIZADOR AUTOMATICO
+echo   SOLPI OS - HYBRID SYNC (SOLPI + HERMES)
 echo ===========================================
 echo.
 
-:: Verifica se o Git esta instalado
-git --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [ERRO] O Git nao esta instalado ou nao foi encontrado no PATH.
-    echo Por favor, instale o Git em: https://git-scm.com/download/win
-    pause
-    exit
+:: Detecta caminho do Git
+set GIT_CMD="C:\Program Files\Git\cmd\git.exe"
+if not exist %GIT_CMD% (
+    set GIT_CMD=git
 )
 
-echo [1/3] Preparando arquivos...
-git add .
+echo [1/3] Indexando nova arquitetura hibrida...
+%GIT_CMD% add .
 
-echo [2/3] Criando ponto de salvamento...
-git commit -m "Evolucao do Agente SOLPI - Sincronismo Automatico"
+echo [2/3] Consolidando nucleo de alta performance...
+%GIT_CMD% commit -m "feat: SOLPI OS v6.0 HYBRID - Integrated Hermes-Agent Engine into AI Core"
 
-echo [3/3] Enviando para o GitHub...
-git push origin main
+echo [3/3] Sincronizando com a Nuvem...
+%GIT_CMD% push origin main
 
 if %errorlevel% neq 0 (
     echo.
-    echo [AVISO] Houve um problema no envio.
-    echo Verifique se voce esta logado no GitHub e se a internet esta ativa.
+    echo [AVISO] Houve um problema no sincronismo. Verifique login/internet.
 ) else (
     echo.
-    echo [SUCESSO] Seu Agente esta na nuvem!
+    echo [SUCESSO] SOLPI OS v6 Hibrido esta salvo no GitHub!
 )
 
 echo.

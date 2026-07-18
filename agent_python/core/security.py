@@ -24,7 +24,6 @@ class SecurityGatekeeper:
                 return False, f"⚠️ BLOQUEIO DE SEGURANÇA: O termo '{forbidden}' é restrito."
 
         # 2. Bloqueia tentativas de concatenação de comandos (&&, ||, ;)
-        # Isso evita que alguém digite: "lista arquivos && deleta tudo"
         if re.search(r"[&|;]{2,}", input_string):
             return False, "⚠️ BLOQUEIO DE SEGURANÇA: Tentativa de encadeamento de comandos suspeita."
 
@@ -33,6 +32,5 @@ class SecurityGatekeeper:
     @staticmethod
     def sanitize_shell(command):
         """Limpa o comando shell antes da execução."""
-        # Remove caracteres que podem ser usados para escapar do comando planejado
         clean_cmd = re.sub(r"[><|&;]", "", command)
         return clean_cmd.strip()
