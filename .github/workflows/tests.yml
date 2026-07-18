@@ -60,7 +60,7 @@ jobs:
           fail_ci_if_error: false
 
   static-analysis:
-    name: Static Analysis
+    name: Static Analysis & Code Quality
     runs-on: ubuntu-latest
 
     steps:
@@ -83,7 +83,7 @@ jobs:
         run: composer run-script duplicate-check
 
   php-lint:
-    name: PHP Lint
+    name: PHP Syntax Check
     runs-on: ubuntu-latest
 
     steps:

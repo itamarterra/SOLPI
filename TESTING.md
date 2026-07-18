@@ -6,22 +6,22 @@
 2. [Executar Testes](#executar-testes)
 3. [Estrutura de Testes](#estrutura-de-testes)
 4. [Escrevendo Novos Testes](#escrevendo-novos-testes)
-5. [CI/CD](#cicd)
-6. [Troubleshooting](#troubleshooting)
+5. [CI/CD GitHub Actions](#cicd-github-actions)
 
 ---
 
 ## Setup Inicial
 
-### 1. Instalar Dependências de Teste
+### 1. Instalar Dependências
 ```bash
+cd /path/to/SOLPI
 composer install
 ```
 
 Isso instala:
-- ✅ **PHPUnit 11** — Framework de testes
-- ✅ **PHPStan 2** — Análise estática (já estava em require-dev)
-- ✅ **PHPCPD 6** — Detecção de código duplicado (já estava em require-dev)
+- ✅ **PHPUnit 11** — Framework de testes unitários
+- ✅ **PHPStan 2** — Análise estática de código
+- ✅ **PHPCPD 6** — Detecção de código duplicado
 
 ### 2. Verificar PHP Version
 ```bash
@@ -41,13 +41,11 @@ composer validate --strict
 
 ## Executar Testes
 
-### ⚡ Testes Rápidos (Recomendado para desenvolvimento)
+### ⚡ Todos os Testes
 ```bash
 composer run-script test
 # Equivalente a: ./vendor/bin/phpunit
 ```
-
-Executa todos os testes em paralelo (mais rápido).
 
 ### 📊 Apenas Testes Unitários
 ```bash
@@ -64,29 +62,34 @@ composer run-script test:integration
 ### 📈 Testes com Coverage Report
 ```bash
 composer run-script test:coverage
-# Gera: coverage/index.html
+# Gera relatório em: coverage/index.html
 ```
 
-Abre no navegador:
+Abrir no navegador:
 ```bash
-open coverage/index.html      # macOS
-start coverage\index.html     # Windows
-xdg-open coverage/index.html  # Linux
+# macOS
+open coverage/index.html
+
+# Windows
+start coverage\index.html
+
+# Linux
+xdg-open coverage/index.html
 ```
 
 ### 🔍 Análise Estática (PHPStan)
 ```bash
 composer run-script analyse
-# Detecta: type errors, undefined methods, etc.
+# Detecta: type errors, undefined methods, code smells
 ```
 
 ### 🚨 Verificar Código Duplicado
 ```bash
 composer run-script duplicate-check
-# Encontra: segmentos de código duplicados
+# Encontra: segmentos de código repetidos
 ```
 
-### ✅ Verificação Completa (Recomendado antes de commit)
+### ✅ Verificação Completa (Antes de Commit)
 ```bash
 composer run-script check
 # Executa: test + analyse + duplicate-check
@@ -99,8 +102,8 @@ composer run-script check
 ```
 tests/
 ├── Unit/                      # Testes Unitários
-│   ├── ValidationTest.php     # ✅ Validação de payloads
-│   └── ConfigurationTest.php  # ✅ Variáveis e configuração
+│   ├── ValidationTest.php     # Validação de payloads
+│   └── ConfigurationTest.php  # Configuração do plugin
 │
 ├── Integration/               # Testes de Integração
 │   └── (será adicionado conforme necessário)
@@ -115,69 +118,7 @@ tests/
 phpunit.xml                   # Configuração PHPUnit
 ```
 
-### Fixtures (Dados de Teste)
-
-As fixtures contêm dados mock para testes sem chamar APIs reais:
-
-```php
-// Usar em um teste:
-$fixtures = $this->getTestFixture('zabbix_responses');
-$alert = $fixtures['alert_problem'];
-```
-
----
-
-## Escrevendo Novos Testes
-
-### Estrutura Básica de um Unit Test
-
-```php
-<?php
-namespace SOLPI\Tests\Unit;
-
-use PHPUnit\Framework\TestCase;
-
-class MyFeatureTest extends TestCase
-{
-    protected function setUp(): void
-    {
-        // Executado antes de cada teste
-    }
-
-    public function testSomethingWorks(): void
-    {
-        // Arrange (preparar)
-        $input = 'some data';
-
-        // Act (executar)
-        $result = doSomething($input);
-
-        // Assert (validar)
-        $this->assertEquals('expected', $result);
-    }
-
-    public function testSomethingFails(): void
-    {
-        $this->expectException(\Exception::class);
-        doSomething('invalid');
-    }
-}
-```
-
-### Executar um Teste Específico
-
-```bash
-# Teste específico
-./vendor/bin/phpunit tests/Unit/ValidationTest.php
-
-# Método específico
-./vendor/bin/phpunit tests/Unit/ValidationTest.php --filter testValidateZabbixPayload
-
-# Com output verbose
-./vendor/bin/phpunit --verbose
-```
-
-### Usar Fixtures
+### Usar Fixtures em Testes
 
 ```php
 public function testWithFixture(): void
@@ -189,50 +130,101 @@ public function testWithFixture(): void
 }
 ```
 
+---
+
+## Escrevendo Novos Testes
+
+### Estrutura Básica
+
+```php
+<?php
+namespace SOLPI\Tests\Unit;
+
+use PHPUnit\Framework\TestCase;
+use SOLPI\Modules\ZabbixIntegration;
+
+class ZabbixIntegrationTest extends TestCase
+{
+    private ZabbixIntegration $zabbix;
+
+    protected function setUp(): void
+    {
+        $this->zabbix = new ZabbixIntegration();
+    }
+
+    public function testProcessAlert(): void
+    {
+        // Arrange (preparar dados)
+        $alert = [
+            'trigger_id' => '12345',
+            'status' => 'PROBLEM',
+            'hostname' => 'server-01',
+        ];
+
+        // Act (executar ação)
+        $result = $this->zabbix->processAlert($alert);
+
+        // Assert (validar resultado)
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('notification_id', $result);
+    }
+
+    public function testRejectInvalidAlert(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        
+        $invalid = ['status' => 'PROBLEM']; // missing required fields
+        $this->zabbix->processAlert($invalid);
+    }
+}
+```
+
+### Executar Teste Específico
+
+```bash
+# Teste específico
+./vendor/bin/phpunit tests/Unit/ZabbixIntegrationTest.php
+
+# Método específico
+./vendor/bin/phpunit tests/Unit/ZabbixIntegrationTest.php --filter testProcessAlert
+
+# Com verbose output
+./vendor/bin/phpunit --verbose
+```
+
 ### Mock de Dependências
 
 ```php
 public function testWithMock(): void
 {
-    $mock = $this->createMock(\SomeClass::class);
-    $mock->method('getValue')
-         ->willReturn(42);
+    $mock = $this->createMock(\SOLPI\Services\WebhookService::class);
+    $mock->method('validate')
+         ->willReturn(true);
     
-    $this->assertEquals(42, $mock->getValue());
+    $this->assertTrue($mock->validate([]));
 }
 ```
 
 ---
 
-## CI/CD
+## CI/CD GitHub Actions
 
-### GitHub Actions
-
-Arquivo: `.github/workflows/tests.yml`
+### Arquivo: `.github/workflows/tests.yml`
 
 Automaticamente executa quando:
 - ✅ Push para `main` ou `develop`
 - ✅ Pull Request para `main` ou `develop`
 
-#### Workflows Inclusos:
+### Workflows Inclusos:
 
-1. **Test** — PHPUnit (PHP 8.3 + 8.4)
-2. **Static Analysis** — PHPStan + PHPCPD
-3. **PHP Lint** — Validação de sintaxe
+1. **PHPUnit** — Testa PHP 8.3 + 8.4
+2. **PHPStan** — Análise estática (level=max)
+3. **PHPCPD** — Detecção de duplicação
+4. **PHP Lint** — Validação de sintaxe
 
-#### Ver Status
+### Ver Status
 
-Acesse:
-```
-https://github.com/itamarterra/SOLPI/actions
-```
-
-#### Upload de Coverage
-
-Coverage reports são automaticamente enviados para [Codecov.io](https://codecov.io):
-```
-https://codecov.io/gh/itamarterra/SOLPI
-```
+Acesse: https://github.com/itamarterra/SOLPI/actions
 
 ---
 
@@ -243,28 +235,19 @@ https://codecov.io/gh/itamarterra/SOLPI
 Alvo: **80% de cobertura de código**
 
 ```bash
-# Ver coverage:
 composer run-script test:coverage
-# Abrir coverage/index.html
+open coverage/index.html
 ```
 
 ### PHPStan Level
 
-Atualmente: **level=max** (máximo rigor)
+Configurado: **level=max** (máximo rigor)
 
 ```bash
 composer run-script analyse
 ```
 
-Resolve todos os erros antes de fazer commit!
-
-### Code Duplication
-
-Máximo tolerado: **5% de duplicação**
-
-```bash
-composer run-script duplicate-check
-```
+Resolva todos os erros antes de fazer commit!
 
 ---
 
@@ -277,16 +260,10 @@ export PATH="vendor/bin:$PATH"
 ```
 
 ### ❌ Erro: "Class not found"
-Verifique se a classe está no caminho correto e o autoloader está ativado:
 ```bash
 composer dumpautoload -o
+composer run-script test
 ```
-
-### ❌ Teste passes localmente mas falha no CI
-Verifique:
-1. Versão do PHP: `php --version`
-2. Extensões: `php -m | grep json`
-3. Variáveis de ambiente: `env | grep SOLPI_`
 
 ### ❌ Memory limit exceeded
 ```bash
@@ -294,9 +271,9 @@ php -d memory_limit=512M ./vendor/bin/phpunit
 ```
 
 ### ❌ Tests muito lentos
+Rode apenas um teste específico:
 ```bash
-# Executar em paralelo
-composer run-script test
+./vendor/bin/phpunit tests/Unit/ValidationTest.php
 ```
 
 ### ❌ Fixture não encontrada
@@ -311,7 +288,7 @@ Verifique:
 
 ### ✅ Faça
 - ✅ Escreva testes ANTES de implementar (TDD)
-- ✅ Use descritições claras: `testValidateZabbixPayloadWithMissingFields`
+- ✅ Use nomes descritivos: `testValidateZabbixPayloadWithMissingFields`
 - ✅ Teste casos positivos E negativos
 - ✅ Use fixtures para dados complexos
 - ✅ Run `composer run-script check` antes de commit
@@ -322,7 +299,6 @@ Verifique:
 - ❌ Testes que deixam dados no banco (use tearDown)
 - ❌ Testes que dependem de ordem de execução
 - ❌ Hard-coded timestamps (use time() ou fixtures)
-- ❌ Assertions sem mensagens claras
 
 ---
 
@@ -345,10 +321,10 @@ Verifique:
 
 4. **Escreva novos testes** para seus features
 
-5. **Configure Codecov** (opcional):
-   - Acesse https://codecov.io
-   - Conecte seu repo GitHub
-   - Testes vão automaticamente reportar coverage
+5. **Rode análise completa antes de commit:**
+   ```bash
+   composer run-script check
+   ```
 
 ---
 
@@ -357,10 +333,10 @@ Verifique:
 - [PHPUnit 11 Docs](https://phpunit.de/)
 - [PHPStan Docs](https://phpstan.org/)
 - [PHPCPD Docs](https://github.com/sebastianbergmann/phpcpd)
-- [Codecov Setup](https://docs.codecov.io/)
+- [GLPI Plugin Development](https://glpi-project.org/)
 
 ---
 
-**Última atualização:** 2025-07-18  
 **Versão:** 1.0  
+**Última atualização:** 2025-07-18  
 **Projeto:** SOLPI Plugin para GLPI
